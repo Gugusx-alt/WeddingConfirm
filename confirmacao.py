@@ -6,7 +6,8 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 
 # Lista de números
-numeros = ["+5546999068666", "+5546999352280"]
+numeros = ["5546999068666, 5546999207515, 5546999170360"]
+
 mensagem = "Olá! Aqui é a confirmação da sua presença no casamento. Você poderá comparecer?"
 
 # Inicia o navegador e abre o WhatsApp Web
@@ -66,6 +67,38 @@ for numero in numeros:
         # Troca para nova aba
         driver.switch_to.window(driver.window_handles[-1])
 
+        # Verifica se aparece o botão "OK" (número inexistente)
+        try:
+            botao_ok = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, '//div[@role="button" and .="OK"]'))
+            )
+            botao_ok.click()
+            print(f"Número {numero} não existe no WhatsApp. Informando no grupo e pulando para o próximo.")
+
+            # Fecha a aba e volta para o grupo
+            driver.close()
+            driver.switch_to.window(driver.window_handles[0])
+            time.sleep(1)
+
+            # Volta para o grupo "Apenas eu"
+            grupo = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Apenas eu")]'))
+            )
+            grupo.click()
+            time.sleep(2)
+
+            # Envia mensagem de erro no grupo
+            caixa_msg = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//footer//div[@contenteditable="true"]'))
+            )
+            caixa_msg.click()
+            caixa_msg.send_keys(f"O número {numero} não existe no WhatsApp.")
+            caixa_msg.send_keys(Keys.ENTER)
+            time.sleep(2)
+            continue  # Pula para o próximo número
+        except Exception as e:
+            pass  # Não encontrou o botão OK, segue normalmente
+
         # Aguarda e envia mensagem
         try:
             campo_mensagem = WebDriverWait(driver, 15).until(
@@ -85,6 +118,18 @@ for numero in numeros:
             driver.close()
             driver.switch_to.window(driver.window_handles[0])
             time.sleep(1)
+
+        # Volta para o grupo "Apenas eu" antes de ir para o próximo número
+        try:
+            grupo = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Apenas eu")]'))
+            )
+            grupo.click()
+            time.sleep(2)
+            print("Voltou para o grupo 'Apenas eu'.")
+        except Exception as e:
+            print(f"Erro ao voltar para o grupo: {e}")
+            continue
 
     except Exception as e:
         print(f"Erro ao processar {numero}: {e}")

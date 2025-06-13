@@ -21,6 +21,7 @@ WebDriverWait(driver, 60).until(
 print("WhatsApp Web carregado.")
 
 # Acessa o grupo "Apenas eu"
+#Função para tratar os erros 
 try:
     grupo = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.XPATH, '//*[contains(@title, "Apenas eu")]'))

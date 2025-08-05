@@ -5,12 +5,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-# Lista de números
 numeros = ["5546999068666, 5546999207515, 5546999170360"]
 
 mensagem = "Olá! Aqui é a confirmação da sua presença no casamento. Você poderá comparecer?"
 
-# Inicia o navegador e abre o WhatsApp Web
+
 driver = webdriver.Chrome()
 driver.get("https://web.whatsapp.com")
 
@@ -20,8 +19,7 @@ WebDriverWait(driver, 60).until(
 )
 print("WhatsApp Web carregado.")
 
-# Acessa o grupo "Apenas eu"
-#Função para tratar os erros 
+
 try:
     grupo = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.XPATH, '//*[contains(@title, "Apenas eu")]'))

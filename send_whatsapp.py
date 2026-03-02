@@ -109,37 +109,95 @@ def wait_for_login(driver: webdriver.Chrome, timeout_s: int) -> None:
 
 def is_invalid_number_dialog_present(driver: webdriver.Chrome) -> bool:
     """
-    Tenta detectar especificamente o popup de número inválido,
-    e não qualquer diálogo genérico do WhatsApp Web.
+    Detecta se há um diálogo indicando que o número é inválido ou não existe no WhatsApp.
+    Retorna True se encontrar, e tenta fechar o diálogo automaticamente.
     """
+    # Procura por diálogos de erro
     dialogs = driver.find_elements(By.XPATH, '//div[@role="dialog"]')
-    if not dialogs:
-        return False
+    
+    # Também procura por mensagens de erro em outros elementos
+    error_elements = driver.find_elements(By.XPATH, 
+        '//div[contains(@class, "error") or contains(@class, "invalid")] | '
+        '//span[contains(@class, "error") or contains(@class, "invalid")] | '
+        '//div[@role="alert"]'
+    )
 
+    # Lista expandida de textos que indicam número inválido/não existe
     invalid_snippets = [
-        "phone number shared via url is invalid",  # EN
-        "número de telefone compartilhado via link é inválido",  # PT-BR (variante comum)
+        # Inglês
+        "phone number shared via url is invalid",
+        "phone number is invalid",
+        "invalid phone number",
+        "this phone number is not registered",
+        "phone number not registered",
+        "number is not on whatsapp",
+        "this number is not on whatsapp",
+        # Português
+        "número de telefone compartilhado via link é inválido",
         "número de telefone compartilhado via url é inválido",
         "número de telefone é inválido",
         "número inválido",
         "número de telefone não é válido",
+        "este número de telefone não está registrado",
+        "número não está registrado",
+        "este número não está no whatsapp",
+        "número não está no whatsapp",
+        "não está no whatsapp",
+        "não possui whatsapp",
+        # Outras variações
+        "número incorreto",
+        "número não encontrado",
     ]
 
-    for d in dialogs:
+    all_elements = list(dialogs) + list(error_elements)
+    
+    for element in all_elements:
         try:
-            text = (d.text or "").strip().lower()
-        except Exception:
-            continue
-        if not text:
-            continue
-        if any(snippet in text for snippet in invalid_snippets):
-            # Opcional: tentar clicar no botão OK para limpar o popup.
+            # Tenta obter o texto de várias formas
+            text = ""
             try:
-                ok_btn = d.find_element(By.XPATH, './/div[@role="button" and normalize-space()="OK"]')
-                ok_btn.click()
+                text = (element.text or "").strip().lower()
             except Exception:
                 pass
-            return True
+            
+            if not text:
+                try:
+                    text = (element.get_attribute("innerText") or "").strip().lower()
+                except Exception:
+                    pass
+            
+            if not text:
+                try:
+                    text = (element.get_attribute("textContent") or "").strip().lower()
+                except Exception:
+                    continue
+            
+            # Verifica se contém algum dos snippets de erro
+            if any(snippet.lower() in text for snippet in invalid_snippets):
+                print(f"    Debug: Detectado diálogo de número inválido: {text[:100]}")
+                # Tenta fechar o diálogo clicando em OK/Fechar
+                try:
+                    # Procura botão OK em vários formatos
+                    ok_selectors = [
+                        './/div[@role="button" and (normalize-space()="OK" or normalize-space()="Ok" or normalize-space()="ok")]',
+                        './/button[normalize-space()="OK" or normalize-space()="Ok" or normalize-space()="ok"]',
+                        './/span[normalize-space()="OK" or normalize-space()="Ok" or normalize-space()="ok"]',
+                        './/div[contains(@class, "button") and (normalize-space()="OK" or normalize-space()="Ok")]',
+                    ]
+                    for selector in ok_selectors:
+                        try:
+                            ok_btn = element.find_element(By.XPATH, selector)
+                            if ok_btn.is_displayed():
+                                ok_btn.click()
+                                time.sleep(0.5)
+                                break
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+                return True
+        except Exception:
+            continue
 
     return False
 
@@ -352,19 +410,26 @@ def main(argv: list[str] | None = None) -> None:
         for idx, c in enumerate(contacts, start=1):
             msg = render_message(template, c)
             url = build_send_url(c.phone_e164_digits, msg)
-            print(f"[{idx}/{len(contacts)}] Abrindo chat {c.phone_e164_digits}...")
-            driver.get(url)
+            print(f"[{idx}/{len(contacts)}] Processando {c.phone_e164_digits}...")
+            
+            try:
+                driver.get(url)
+            except Exception as e:
+                print(f"  ✗ Erro ao abrir URL: {e}")
+                failed += 1
+                continue
 
             # Verifica primeiro se é número inválido (antes de esperar o campo de texto)
             time.sleep(2)  # Aguarda um pouco para o WhatsApp carregar
             if is_invalid_number_dialog_present(driver):
-                print(f"  - Parece número inválido/sem WhatsApp: {c.phone_e164_digits}")
+                print(f"  ⚠ Número inválido ou sem WhatsApp: {c.phone_e164_digits}")
                 failed += 1
-                # Fecha o diálogo se existir
+                # Aguarda um pouco e tenta fechar qualquer diálogo restante
+                time.sleep(1)
                 try:
-                    ok_btn = driver.find_element(By.XPATH, '//div[@role="button" and normalize-space()="OK"]')
-                    ok_btn.click()
-                    time.sleep(1)
+                    # Tenta pressionar ESC para fechar diálogos
+                    driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+                    time.sleep(0.5)
                 except Exception:
                     pass
                 continue
@@ -378,24 +443,41 @@ def main(argv: list[str] | None = None) -> None:
                 # Aguarda mais um pouco para garantir que a mensagem foi pré-preenchida
                 time.sleep(2)
             except TimeoutException:
-                print(f"  - Timeout ao abrir chat: {c.phone_e164_digits}")
+                # Se deu timeout, verifica se é porque o número é inválido
+                if is_invalid_number_dialog_present(driver):
+                    print(f"  ⚠ Número inválido ou sem WhatsApp: {c.phone_e164_digits}")
+                else:
+                    print(f"  ✗ Timeout ao abrir chat: {c.phone_e164_digits}")
                 failed += 1
                 continue
 
-            # Verifica novamente se apareceu algum diálogo de erro
+            # Verifica novamente se apareceu algum diálogo de erro após carregar
             if is_invalid_number_dialog_present(driver):
-                print(f"  - Parece número inválido/sem WhatsApp: {c.phone_e164_digits}")
+                print(f"  ⚠ Número inválido ou sem WhatsApp: {c.phone_e164_digits}")
                 failed += 1
                 continue
 
             # Tenta enviar a mensagem
             try:
                 try_click_send(driver, timeout_s=int(args.per_chat_timeout))
+                
+                # Verifica se após enviar apareceu algum erro (número inválido, etc)
+                time.sleep(1)
+                if is_invalid_number_dialog_present(driver):
+                    print(f"  ⚠ Número inválido ou sem WhatsApp: {c.phone_e164_digits}")
+                    failed += 1
+                    continue
+                
                 sent += 1
-                print(f"  ✓ Enviado para {c.phone_e164_digits}")
+                print(f"  ✓ Mensagem enviada para {c.phone_e164_digits}")
             except Exception as e:
+                # Verifica se o erro foi por número inválido
+                if is_invalid_number_dialog_present(driver):
+                    print(f"  ⚠ Número inválido ou sem WhatsApp: {c.phone_e164_digits}")
+                else:
+                    print(f"  ✗ Falhou ao enviar para {c.phone_e164_digits}: {e}")
                 failed += 1
-                print(f"  ✗ Falhou ao enviar para {c.phone_e164_digits}: {e}")
+                continue
 
             delay = random.uniform(float(args.delay_min), float(args.delay_max))
             time.sleep(delay)

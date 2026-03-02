@@ -1,3 +1,6 @@
-2026/03/02-20:08:58.993 5 Reusing MANIFEST /home/gustavo/Projetos/WeddingConfirm/.wa_profile/Default/Local Storage/leveldb/MANIFEST-000001
-2026/03/02-20:08:59.000 5 Recovering log #4
-2026/03/02-20:08:59.000 5 Reusing old log /home/gustavo/Projetos/WeddingConfirm/.wa_profile/Default/Local Storage/leveldb/000004.log 
+2026/03/02-20:19:31.281 5 Reusing MANIFEST /home/gustavo/Projetos/WeddingConfirm/.wa_profile/Default/Local Storage/leveldb/MANIFEST-000001
+2026/03/02-20:19:31.288 5 Recovering log #4
+2026/03/02-20:19:31.289 5 Reusing old log /home/gustavo/Projetos/WeddingConfirm/.wa_profile/Default/Local Storage/leveldb/000004.log 
+2026/03/02-20:20:31.293 5 Level-0 table #7: started
+2026/03/02-20:20:31.297 5 Level-0 table #7: 17254 bytes OK
+2026/03/02-20:20:31.301 5 Delete type=0 #4

@@ -1,0 +1,59 @@
+2026/03/02-20:08:59.655 4050 Reusing MANIFEST /home/gustavo/Projetos/WeddingConfirm/.wa_profile/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/02-20:08:59.655 4050 Recovering log #280
+2026/03/02-20:08:59.665 4050 Reusing old log /home/gustavo/Projetos/WeddingConfirm/.wa_profile/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000280.log 
+2026/03/02-20:09:00.858 4068 Level-0 table #287: started
+2026/03/02-20:09:00.873 4068 Level-0 table #287: 381345 bytes OK
+2026/03/02-20:09:00.875 4068 Delete type=0 #280
+2026/03/02-20:09:00.876 404f Manual compaction at level-0 from '\x00N\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00O\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/02-20:09:00.943 4050 Compacting 1@1 + 3@2 files
+2026/03/02-20:09:00.988 4050 Generated table #288@1: 58916 keys, 2231846 bytes
+2026/03/02-20:09:01.046 4050 Generated table #289@1: 34815 keys, 2201115 bytes
+2026/03/02-20:09:01.085 4050 Generated table #290@1: 34248 keys, 1437514 bytes
+2026/03/02-20:09:01.085 4050 Compacted 1@1 + 3@2 files => 5870475 bytes
+2026/03/02-20:09:01.086 4050 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/02-20:09:01.087 4050 Delete type=2 #282
+2026/03/02-20:09:01.087 4050 Delete type=2 #283
+2026/03/02-20:09:01.087 4050 Delete type=2 #284
+2026/03/02-20:09:01.087 4050 Delete type=2 #287
+2026/03/02-20:09:04.251 4052 Level-0 table #292: started
+2026/03/02-20:09:04.255 4052 Level-0 table #292: 255348 bytes OK
+2026/03/02-20:09:04.256 4052 Delete type=0 #286
+2026/03/02-20:09:04.257 4052 Manual compaction at level-0 from '\x00O\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00P\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/02-20:09:04.297 4050 Compacting 1@1 + 3@2 files
+2026/03/02-20:09:04.332 4050 Generated table #293@1: 59694 keys, 2232943 bytes
+2026/03/02-20:09:04.363 4050 Generated table #294@1: 34937 keys, 2199277 bytes
+2026/03/02-20:09:04.388 4050 Generated table #295@1: 34569 keys, 1466438 bytes
+2026/03/02-20:09:04.388 4050 Compacted 1@1 + 3@2 files => 5898658 bytes
+2026/03/02-20:09:04.390 4050 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/02-20:09:04.390 4050 Delete type=2 #288
+2026/03/02-20:09:04.390 4050 Delete type=2 #289
+2026/03/02-20:09:04.390 4050 Delete type=2 #290
+2026/03/02-20:09:04.390 4050 Delete type=2 #292
+2026/03/02-20:09:23.189 404f Level-0 table #297: started
+2026/03/02-20:09:23.197 404f Level-0 table #297: 560350 bytes OK
+2026/03/02-20:09:23.198 404f Delete type=0 #291
+2026/03/02-20:09:23.199 404f Manual compaction at level-0 from '\x00P\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00Q\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/02-20:09:23.227 4050 Compacting 1@1 + 3@2 files
+2026/03/02-20:09:23.278 4050 Generated table #298@1: 61029 keys, 2232702 bytes
+2026/03/02-20:09:23.321 4050 Generated table #299@1: 34758 keys, 2199230 bytes
+2026/03/02-20:09:23.348 4050 Generated table #300@1: 35279 keys, 1519372 bytes
+2026/03/02-20:09:23.348 4050 Compacted 1@1 + 3@2 files => 5951304 bytes
+2026/03/02-20:09:23.349 4050 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/02-20:09:23.349 4050 Delete type=2 #293
+2026/03/02-20:09:23.349 4050 Delete type=2 #294
+2026/03/02-20:09:23.349 4050 Delete type=2 #295
+2026/03/02-20:09:23.349 4050 Delete type=2 #297
+2026/03/02-20:09:41.511 4052 Level-0 table #302: started
+2026/03/02-20:09:41.521 4052 Level-0 table #302: 401605 bytes OK
+2026/03/02-20:09:41.522 4052 Delete type=0 #296
+2026/03/02-20:09:41.523 404f Manual compaction at level-0 from '\x00Q\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00R\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/02-20:09:41.601 4050 Compacting 1@1 + 3@2 files
+2026/03/02-20:09:41.663 4050 Generated table #303@1: 62355 keys, 2234883 bytes
+2026/03/02-20:09:41.718 4050 Generated table #304@1: 35087 keys, 2200843 bytes
+2026/03/02-20:09:41.759 4050 Generated table #305@1: 35535 keys, 1571279 bytes
+2026/03/02-20:09:41.760 4050 Compacted 1@1 + 3@2 files => 6007005 bytes
+2026/03/02-20:09:41.761 4050 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/02-20:09:41.761 4050 Delete type=2 #298
+2026/03/02-20:09:41.761 4050 Delete type=2 #299
+2026/03/02-20:09:41.762 4050 Delete type=2 #300
+2026/03/02-20:09:41.762 4050 Delete type=2 #302

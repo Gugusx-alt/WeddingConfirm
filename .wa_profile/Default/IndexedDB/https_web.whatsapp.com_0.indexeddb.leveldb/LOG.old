@@ -1,0 +1,59 @@
+2026/03/02-20:05:22.785 3df6 Reusing MANIFEST /home/gustavo/Projetos/WeddingConfirm/.wa_profile/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/02-20:05:22.785 3df6 Recovering log #259
+2026/03/02-20:05:22.794 3df6 Reusing old log /home/gustavo/Projetos/WeddingConfirm/.wa_profile/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000259.log 
+2026/03/02-20:05:24.059 3dfb Level-0 table #266: started
+2026/03/02-20:05:24.064 3dfb Level-0 table #266: 354245 bytes OK
+2026/03/02-20:05:24.065 3dfb Delete type=0 #259
+2026/03/02-20:05:24.066 3dfb Manual compaction at level-0 from '\x00J\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00K\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/02-20:05:24.111 3df7 Compacting 1@1 + 3@2 files
+2026/03/02-20:05:24.174 3df7 Generated table #267@1: 55671 keys, 2227612 bytes
+2026/03/02-20:05:24.224 3df7 Generated table #268@1: 33293 keys, 2205203 bytes
+2026/03/02-20:05:24.259 3df7 Generated table #269@1: 32698 keys, 1262261 bytes
+2026/03/02-20:05:24.260 3df7 Compacted 1@1 + 3@2 files => 5695076 bytes
+2026/03/02-20:05:24.261 3df7 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/02-20:05:24.261 3df7 Delete type=2 #261
+2026/03/02-20:05:24.262 3df7 Delete type=2 #262
+2026/03/02-20:05:24.262 3df7 Delete type=2 #263
+2026/03/02-20:05:24.262 3df7 Delete type=2 #266
+2026/03/02-20:05:27.544 3e0f Level-0 table #271: started
+2026/03/02-20:05:27.547 3e0f Level-0 table #271: 192504 bytes OK
+2026/03/02-20:05:27.548 3e0f Delete type=0 #265
+2026/03/02-20:05:27.549 3df6 Manual compaction at level-0 from '\x00K\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00L\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/02-20:05:27.608 3df7 Compacting 1@1 + 3@2 files
+2026/03/02-20:05:27.671 3df7 Generated table #272@1: 56479 keys, 2229154 bytes
+2026/03/02-20:05:27.724 3df7 Generated table #273@1: 33513 keys, 2213466 bytes
+2026/03/02-20:05:27.744 3df7 Generated table #274@1: 32706 keys, 1280261 bytes
+2026/03/02-20:05:27.745 3df7 Compacted 1@1 + 3@2 files => 5722881 bytes
+2026/03/02-20:05:27.746 3df7 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/02-20:05:27.746 3df7 Delete type=2 #267
+2026/03/02-20:05:27.746 3df7 Delete type=2 #268
+2026/03/02-20:05:27.746 3df7 Delete type=2 #269
+2026/03/02-20:05:27.746 3df7 Delete type=2 #271
+2026/03/02-20:05:44.540 3dfb Level-0 table #276: started
+2026/03/02-20:05:44.548 3dfb Level-0 table #276: 356554 bytes OK
+2026/03/02-20:05:44.549 3dfb Delete type=0 #270
+2026/03/02-20:05:44.550 3df6 Manual compaction at level-0 from '\x00L\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00M\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/02-20:05:44.665 3df7 Compacting 1@1 + 3@2 files
+2026/03/02-20:05:44.697 3df7 Generated table #277@1: 57789 keys, 2230489 bytes
+2026/03/02-20:05:44.728 3df7 Generated table #278@1: 33568 keys, 2201355 bytes
+2026/03/02-20:05:44.752 3df7 Generated table #279@1: 33052 keys, 1333560 bytes
+2026/03/02-20:05:44.753 3df7 Compacted 1@1 + 3@2 files => 5765404 bytes
+2026/03/02-20:05:44.754 3df7 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/02-20:06:02.439 3dfb Level-0 table #281: started
+2026/03/02-20:06:02.445 3dfb Level-0 table #281: 359441 bytes OK
+2026/03/02-20:06:02.447 3dfb Delete type=2 #272
+2026/03/02-20:06:02.447 3dfb Delete type=2 #273
+2026/03/02-20:06:02.447 3dfb Delete type=2 #274
+2026/03/02-20:06:02.447 3dfb Delete type=0 #275
+2026/03/02-20:06:02.447 3dfb Delete type=2 #276
+2026/03/02-20:06:02.448 3df6 Manual compaction at level-0 from '\x00M\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00N\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/03/02-20:06:02.514 3df7 Compacting 1@1 + 3@2 files
+2026/03/02-20:06:02.575 3df7 Generated table #282@1: 58311 keys, 2232157 bytes
+2026/03/02-20:06:02.629 3df7 Generated table #283@1: 34247 keys, 2201259 bytes
+2026/03/02-20:06:02.667 3df7 Generated table #284@1: 33582 keys, 1378026 bytes
+2026/03/02-20:06:02.667 3df7 Compacted 1@1 + 3@2 files => 5811442 bytes
+2026/03/02-20:06:02.668 3df7 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/02-20:06:02.669 3df7 Delete type=2 #277
+2026/03/02-20:06:02.669 3df7 Delete type=2 #278
+2026/03/02-20:06:02.669 3df7 Delete type=2 #279
+2026/03/02-20:06:02.669 3df7 Delete type=2 #281

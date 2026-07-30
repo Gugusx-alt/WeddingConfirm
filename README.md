@@ -67,6 +67,18 @@ CREATE ROLE weddingconfirm WITH LOGIN PASSWORD 'weddingconfirm_dev';
 CREATE DATABASE weddingconfirm OWNER weddingconfirm;
 ```
 
+O painel (`/` e tudo em `/api/campanhas/...`) pede usuário e senha (HTTP Basic).
+Por padrão é `admin`/`admin` — **troque isso antes de colocar no ar de verdade**,
+com as variáveis:
+
+```bash
+export PAINEL_USUARIO="seu_usuario"
+export PAINEL_SENHA="uma_senha_forte"
+```
+
+A página que o convidado abre (`/c/{token}`) não pede login — o segredo ali é o
+próprio link, que só aquele convidado recebe.
+
 Abre em <http://localhost:8000>.
 
 Para o transporte WhatsApp Web você também precisa do Chrome e do chromedriver
@@ -168,10 +180,9 @@ mensagem vem do template aprovado e você só preenche os parâmetros. O motor d
 variação continua útil para o parâmetro livre, e todo o resto do sistema —
 painel, lista, links de confirmação, relatório — funciona igual.
 
-Se o serviço for hospedado, ainda faltam: login por usuário (hoje qualquer um
-que abrir a porta 8000 vê tudo), um usuário por campanha no banco, HTTPS, e a
-página de confirmação num domínio próprio, porque link `localhost` não abre no
-celular do convidado.
+Se o serviço for hospedado pra várias pessoas usarem (não só o seu casamento),
+ainda falta: um usuário por campanha no banco (hoje o login é único, dá acesso
+a todas as campanhas), e um domínio de verdade em vez do gerado pelo provedor.
 
 ---
 

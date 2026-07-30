@@ -7,8 +7,8 @@ WeddingConfirm — servidor web.
 Abre em http://localhost:8000
 
 Duas caras no mesmo servidor:
-  /            painel dos noivos (escrever mensagens, importar lista, disparar)
-  /c/{token}   página do convidado, um link por pessoa, para confirmar presença
+  /            painel dos noivos (escrever mensagens, importar lista, disparar) — com login
+  /c/{token}   página do convidado, um link por pessoa, para confirmar presença — sem login
 """
 
 from __future__ import annotations
@@ -17,9 +17,10 @@ import csv
 import io
 import json
 import os
+import secrets
 from pathlib import Path
 
-from fastapi import Body, FastAPI, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -27,6 +28,7 @@ from fastapi.responses import (
     RedirectResponse,
     StreamingResponse,
 )
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from core.contatos import formatar_para_exibir, importar
 from core.db import Banco
@@ -44,10 +46,32 @@ executor = Executor(banco)
 
 
 # --------------------------------------------------------------------------- #
+# Login do painel — protege tudo que é dos noivos; a página do convidado (link
+# individual por token) não passa por aqui, de propósito.
+# --------------------------------------------------------------------------- #
+
+_seguranca = HTTPBasic()
+
+
+def exigir_login(cred: HTTPBasicCredentials = Depends(_seguranca)) -> None:
+    usuario = os.environ.get("PAINEL_USUARIO", "admin")
+    senha = os.environ.get("PAINEL_SENHA", "admin")
+    usuario_ok = secrets.compare_digest(cred.username, usuario)
+    senha_ok = secrets.compare_digest(cred.password, senha)
+    if not (usuario_ok and senha_ok):
+        raise HTTPException(
+            401, "Usuário ou senha inválidos", headers={"WWW-Authenticate": "Basic"}
+        )
+
+
+admin = APIRouter(dependencies=[Depends(exigir_login)])
+
+
+# --------------------------------------------------------------------------- #
 # Páginas
 # --------------------------------------------------------------------------- #
 
-@app.get("/", response_class=HTMLResponse)
+@admin.get("/", response_class=HTMLResponse)
 def painel() -> FileResponse:
     return FileResponse(WEB / "painel.html")
 
@@ -63,7 +87,7 @@ def pagina_convidado(token: str) -> FileResponse:
 # API — campanhas
 # --------------------------------------------------------------------------- #
 
-@app.get("/api/campanhas")
+@admin.get("/api/campanhas")
 def listar_campanhas():
     saida = []
     for c in banco.campanhas():
@@ -71,7 +95,7 @@ def listar_campanhas():
     return saida
 
 
-@app.post("/api/campanhas")
+@admin.post("/api/campanhas")
 def criar_campanha(dados: dict = Body(...)):
     nome = (dados.get("nome") or "").strip()
     if not nome:
@@ -87,7 +111,7 @@ def criar_campanha(dados: dict = Body(...)):
     return {"id": cid}
 
 
-@app.get("/api/campanhas/{cid}")
+@admin.get("/api/campanhas/{cid}")
 def ver_campanha(cid: int):
     c = banco.campanha(cid)
     if not c:
@@ -101,7 +125,7 @@ def ver_campanha(cid: int):
     }
 
 
-@app.delete("/api/campanhas/{cid}")
+@admin.delete("/api/campanhas/{cid}")
 def apagar_campanha(cid: int):
     if not banco.campanha(cid):
         raise HTTPException(404, "Campanha não encontrada")
@@ -111,7 +135,7 @@ def apagar_campanha(cid: int):
     return {"ok": True}
 
 
-@app.put("/api/campanhas/{cid}")
+@admin.put("/api/campanhas/{cid}")
 def salvar_campanha(cid: int, dados: dict = Body(...)):
     if not banco.campanha(cid):
         raise HTTPException(404, "Campanha não encontrada")
@@ -146,7 +170,7 @@ def _ritmo_serializado(bruto) -> dict:
 # API — mensagens
 # --------------------------------------------------------------------------- #
 
-@app.post("/api/campanhas/{cid}/mensagens")
+@admin.post("/api/campanhas/{cid}/mensagens")
 def salvar_mensagens(cid: int, dados: dict = Body(...)):
     corpos = [c for c in (dados.get("corpos") or []) if c.strip()]
     if not corpos:
@@ -155,7 +179,7 @@ def salvar_mensagens(cid: int, dados: dict = Body(...)):
     return {"ok": True, "quantidade": len(corpos)}
 
 
-@app.post("/api/campanhas/{cid}/previa")
+@admin.post("/api/campanhas/{cid}/previa")
 def previa(cid: int, dados: dict = Body(...)):
     """Roleta de variações: mostra como as mensagens vão sair de verdade."""
     campanha = banco.campanha(cid) or {}
@@ -184,7 +208,7 @@ def previa(cid: int, dados: dict = Body(...)):
 # API — convidados
 # --------------------------------------------------------------------------- #
 
-@app.post("/api/campanhas/{cid}/convidados")
+@admin.post("/api/campanhas/{cid}/convidados")
 def importar_convidados(cid: int, dados: dict = Body(...)):
     if not banco.campanha(cid):
         raise HTTPException(404, "Campanha não encontrada")
@@ -204,7 +228,7 @@ def importar_convidados(cid: int, dados: dict = Body(...)):
     }
 
 
-@app.get("/api/campanhas/{cid}/convidados")
+@admin.get("/api/campanhas/{cid}/convidados")
 def listar_convidados(cid: int):
     saida = []
     for c in banco.convidados(cid):
@@ -225,7 +249,7 @@ def listar_convidados(cid: int):
     return saida
 
 
-@app.get("/api/campanhas/{cid}/planilha.csv")
+@admin.get("/api/campanhas/{cid}/planilha.csv")
 def exportar(cid: int):
     buffer = io.StringIO()
     escritor = csv.writer(buffer)
@@ -248,7 +272,7 @@ def exportar(cid: int):
 # API — disparo
 # --------------------------------------------------------------------------- #
 
-@app.post("/api/campanhas/{cid}/iniciar")
+@admin.post("/api/campanhas/{cid}/iniciar")
 def iniciar(cid: int, dados: dict = Body(default={})):
     if not banco.campanha(cid):
         raise HTTPException(404, "Campanha não encontrada")
@@ -263,25 +287,25 @@ def iniciar(cid: int, dados: dict = Body(default={})):
     return {"ok": True, "transporte": getattr(transporte, "nome", "?")}
 
 
-@app.post("/api/campanhas/{cid}/pausar")
+@admin.post("/api/campanhas/{cid}/pausar")
 def pausar(cid: int):
     executor.pausar()
     return {"ok": True}
 
 
-@app.post("/api/campanhas/{cid}/retomar")
+@admin.post("/api/campanhas/{cid}/retomar")
 def retomar(cid: int):
     executor.retomar()
     return {"ok": True}
 
 
-@app.post("/api/campanhas/{cid}/parar")
+@admin.post("/api/campanhas/{cid}/parar")
 def parar(cid: int):
     executor.parar()
     return {"ok": True}
 
 
-@app.get("/api/campanhas/{cid}/situacao")
+@admin.get("/api/campanhas/{cid}/situacao")
 def situacao(cid: int):
     dados = executor.situacao()
     if dados.get("campanha_id") != cid:
@@ -291,7 +315,7 @@ def situacao(cid: int):
     return dados
 
 
-@app.get("/api/campanhas/{cid}/stream")
+@admin.get("/api/campanhas/{cid}/stream")
 def stream(cid: int, request: Request):
     """Server-Sent Events: cada envio aparece no log ao vivo."""
 
@@ -309,8 +333,11 @@ def stream(cid: int, request: Request):
     )
 
 
+app.include_router(admin)
+
+
 # --------------------------------------------------------------------------- #
-# Confirmação do convidado
+# Confirmação do convidado — sem login: o segredo é o token do link.
 # --------------------------------------------------------------------------- #
 
 @app.get("/api/c/{token}")
@@ -364,7 +391,8 @@ def sair_da_lista(token: str):
 
 @app.exception_handler(HTTPException)
 def erro_json(request: Request, exc: HTTPException):
-    return JSONResponse({"erro": exc.detail}, status_code=exc.status_code)
+    return JSONResponse({"erro": exc.detail}, status_code=exc.status_code,
+                        headers=getattr(exc, "headers", None))
 
 
 if __name__ == "__main__":

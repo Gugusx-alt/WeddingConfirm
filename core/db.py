@@ -21,6 +21,7 @@ from typing import Iterator
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from .variacoes import Convidado
 
@@ -85,17 +86,20 @@ CREATE INDEX IF NOT EXISTS idx_ev_camp ON eventos(campanha_id, id);
 class Banco:
     def __init__(self, dsn: str) -> None:
         self.dsn = dsn
+        # Pool em vez de abrir uma conexão nova a cada consulta: com o banco na
+        # nuvem (Railway) e o app rodando local, cada conexão nova é uma volta
+        # inteira de rede — reaproveitar as já abertas é o que faz o painel não
+        # ficar travado.
+        self._pool = ConnectionPool(
+            dsn, min_size=1, max_size=5, kwargs={"row_factory": dict_row}
+        )
         with self.conexao() as con:
             con.execute(ESQUEMA)
 
     @contextmanager
     def conexao(self) -> Iterator[psycopg.Connection]:
-        con = psycopg.connect(self.dsn, row_factory=dict_row)
-        try:
+        with self._pool.connection() as con:
             yield con
-            con.commit()
-        finally:
-            con.close()
 
     # -- campanhas --------------------------------------------------------- #
 
@@ -276,42 +280,41 @@ class Banco:
     # -- resumo e log ------------------------------------------------------ #
 
     def resumo(self, campanha_id: int) -> dict:
+        # Uma consulta só (3 CTEs), não três idas separadas ao banco — com o
+        # banco na nuvem, cada ida-e-volta de rede custa caro.
         with self.conexao() as con:
-            envio = dict(
-                con.execute(
-                    """SELECT
+            linha = con.execute(
+                """WITH envio AS (
+                       SELECT
                          COUNT(*)                                          AS total,
                          COUNT(*) FILTER (WHERE status='pendente')         AS pendentes,
                          COUNT(*) FILTER (WHERE status='enviado')          AS enviados,
                          COUNT(*) FILTER (WHERE status='invalido')         AS invalidos,
                          COUNT(*) FILTER (WHERE status='falhou')           AS falhas,
                          COUNT(*) FILTER (WHERE status='optout')           AS optout
-                       FROM convidados WHERE campanha_id = %s""",
-                    (campanha_id,),
-                ).fetchone()
-            )
-            rsvp = dict(
-                con.execute(
-                    """SELECT
+                       FROM convidados WHERE campanha_id = %s
+                   ), rsvp AS (
+                       SELECT
                          COUNT(*) FILTER (WHERE r.resposta='sim')          AS confirmados,
                          COUNT(*) FILTER (WHERE r.resposta='nao')          AS recusados,
                          COALESCE(SUM(CASE WHEN r.resposta='sim'
                                            THEN 1 + r.acompanhantes END), 0) AS pessoas
                        FROM respostas r
                        JOIN convidados c ON c.id = r.convidado_id
-                      WHERE c.campanha_id = %s""",
-                    (campanha_id,),
-                ).fetchone()
-            )
-            repetidas = con.execute(
-                """SELECT COUNT(*) AS n FROM (
-                       SELECT fp FROM convidados
-                        WHERE campanha_id = %s AND fp IS NOT NULL
-                        GROUP BY fp HAVING COUNT(*) > 1) sub""",
-                (campanha_id,),
-            ).fetchone()["n"]
-        envio = {k: (v or 0) for k, v in envio.items()}
-        rsvp = {k: (v or 0) for k, v in rsvp.items()}
+                      WHERE c.campanha_id = %s
+                   ), repetidas AS (
+                       SELECT COUNT(*) AS n FROM (
+                           SELECT fp FROM convidados
+                            WHERE campanha_id = %s AND fp IS NOT NULL
+                            GROUP BY fp HAVING COUNT(*) > 1) sub
+                   )
+                   SELECT * FROM envio, rsvp, repetidas""",
+                (campanha_id, campanha_id, campanha_id),
+            ).fetchone()
+        envio = {k: (linha[k] or 0) for k in
+                 ("total", "pendentes", "enviados", "invalidos", "falhas", "optout")}
+        rsvp = {k: (linha[k] or 0) for k in ("confirmados", "recusados", "pessoas")}
+        repetidas = linha["n"] or 0
         aguardando = envio["enviados"] - rsvp["confirmados"] - rsvp["recusados"]
         return {**envio, **rsvp, "aguardando": max(0, aguardando),
                 "textos_repetidos": repetidas}

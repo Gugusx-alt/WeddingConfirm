@@ -559,6 +559,9 @@ $("#seletorCampanha").addEventListener("change", e => abrirCampanha(e.target.val
 $("#btNova").addEventListener("click", () => mostrarNova(true));
 $("#btCancelarNova").addEventListener("click", () => mostrarNova(false));
 $("#btCriar").addEventListener("click", async () => {
+  const bt = $("#btCriar");
+  if(bt.disabled) return; // evita criar duplicada em clique duplo com banco lento
+  bt.disabled = true; const texto = bt.textContent; bt.textContent = "Criando...";
   try{
     const {id} = await api("/api/campanhas", {method:"POST", body: JSON.stringify({
       nome:$("#nvNome").value, noivos:$("#nvNoivos").value, data_evento:$("#nvData").value,
@@ -567,6 +570,7 @@ $("#btCriar").addEventListener("click", async () => {
     await carregarCampanhas();
     $("#seletorCampanha").value = id; await abrirCampanha(id);
   }catch(e){ alert(e.message); }
+  finally{ bt.disabled = false; bt.textContent = texto; }
 });
 
 const salvarFesta = debounce(async () => {

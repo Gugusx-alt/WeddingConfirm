@@ -120,11 +120,12 @@ def ver_campanha(cid: int):
     if not c:
         raise HTTPException(404, "Campanha não encontrada")
     c["ritmo"] = json.loads(c["ritmo"] or "{}")
+    resumo = banco.resumo(cid)
     return {
         **c,
         "templates": banco.templates(cid),
-        "resumo": banco.resumo(cid),
-        "estimativa": ritmo_de_dict(c["ritmo"]).estimar(banco.resumo(cid)["pendentes"]),
+        "resumo": resumo,
+        "estimativa": ritmo_de_dict(c["ritmo"]).estimar(resumo["pendentes"]),
     }
 
 

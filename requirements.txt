@@ -4,6 +4,7 @@ uvicorn[standard]>=0.29
 
 # Banco de dados
 psycopg[binary]>=3.1
+psycopg-pool>=3.2
 python-dotenv>=1.0
 
 # Transporte WhatsApp Web (opcional: só se for usar --transporte whatsapp_web)

@@ -56,16 +56,36 @@ button{font-family:inherit;font-size:inherit;cursor:pointer}
 .trilha i.nao{background:var(--rosa)}
 .trilha i.ruim{background:#5A4152}
 
-/* ---------- layout ---------- */
-.corpo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:0;align-items:start}
-.coluna{padding:26px 28px 60px;min-width:0}
-.coluna+.coluna{border-left:1px solid var(--linha)}
+/* ---------- assistente (passo a passo) ---------- */
+.passos{border-bottom:1px solid var(--linha);background:#11142433}
+.stepper{display:flex;list-style:none;margin:0;padding:14px 28px;max-width:640px;overflow-x:auto;gap:2px}
+.stepper li{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;flex:0 0 auto;
+  font-family:var(--dado);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#5F6485;
+  transition:color .15s}
+.stepper li:not(:last-child){padding-right:14px;margin-right:12px;position:relative}
+.stepper li:not(:last-child)::after{content:"";position:absolute;right:0;top:50%;translate:0 -50%;
+  width:14px;height:1px;background:var(--linha)}
+.stepper li b{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;
+  border-radius:50%;border:1px solid var(--linha);font-weight:400;font-size:11px;flex:0 0 auto;
+  color:var(--papel-2);transition:background .15s,border-color .15s,color .15s}
+.stepper li:hover{color:var(--papel-2)}
+.stepper li.atual{color:var(--papel)}
+.stepper li.atual b{background:var(--ouro);border-color:var(--ouro);color:#20180A}
+.stepper li.feito b{background:var(--hortela);border-color:var(--hortela);color:#0E2118}
+.stepper li.feito{color:var(--papel-2)}
+.stepper li span{display:none}
+@media (min-width:640px){.stepper li span{display:inline}}
+
+/* ---------- layout em coluna única (um passo por vez) ---------- */
+.area{max-width:640px;margin:0 auto;padding:28px 28px 70px;min-width:0}
 
 section{margin-bottom:34px}
 .rotulo-secao{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
 .rotulo-secao h2{font-family:var(--display);font-size:21px;font-variation-settings:"SOFT" 60,"WONK" 1}
 .rotulo-secao .olho{margin-left:auto}
 .dica{color:var(--papel-2);font-size:13.5px;margin:0 0 12px}
+
+.nav-etapa{display:flex;justify-content:space-between;gap:10px;margin-top:6px;padding-top:20px;border-top:1px solid var(--linha)}
 
 /* ---------- controles ---------- */
 input,textarea,select{
@@ -164,17 +184,14 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
 @keyframes surgir{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 .log div:last-child,.carta{animation:surgir .22s ease both}
 
-@media (max-width:900px){
-  .corpo{grid-template-columns:1fr}
-  .coluna+.coluna{border-left:0;border-top:1px solid var(--linha)}
-  .coluna{padding:22px 18px 40px}
+@media (max-width:640px){
+  .area{padding:22px 18px 50px}
   .topo{padding:18px 18px 0}
+  .stepper{padding:12px 18px}
 }
 @media (max-width:560px){
   .grade,.grade-3{grid-template-columns:1fr}
   .placar{gap:24px}
-  .coluna{padding:18px 14px 32px}
-  .topo{padding:16px 14px 0}
   .rotulo-secao{flex-wrap:wrap}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -195,29 +212,40 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
   <div class="trilha" id="trilha"></div>
 </div>
 
-<div class="corpo">
-  <!-- ------------------ coluna esquerda ------------------ -->
-  <div class="coluna">
+<div class="passos" id="passos">
+  <ol class="stepper" id="stepper">
+    <li data-passo="1"><b>1</b><span>Festa</span></li>
+    <li data-passo="2"><b>2</b><span>Mensagens</span></li>
+    <li data-passo="3"><b>3</b><span>Convidados</span></li>
+    <li data-passo="4"><b>4</b><span>Ritmo</span></li>
+    <li data-passo="5"><b>5</b><span>Disparo</span></li>
+  </ol>
+</div>
 
-    <section id="secNova" class="oculto">
-      <div class="rotulo-secao"><h2>Comece pela festa</h2></div>
-      <div class="campo"><label for="nvNome">Nome da campanha</label>
-        <input id="nvNome" placeholder="Casamento Gustavo e Letícia"></div>
-      <div class="grade">
-        <div class="campo"><label for="nvNoivos">Noivos</label><input id="nvNoivos" placeholder="Gustavo e Letícia"></div>
-        <div class="campo"><label for="nvData">Data</label><input id="nvData" placeholder="14 de março de 2027"></div>
-      </div>
-      <div class="campo"><label for="nvLocal">Local</label><input id="nvLocal" placeholder="Espaço Villa Verde, Pato Branco"></div>
-      <div class="campo"><label for="nvUrl">Endereço público deste sistema</label>
-        <input id="nvUrl" placeholder="http://localhost:8000">
-        <p class="dica" style="margin-top:6px">É a base do link pessoal de cada convidado. Em teste local, deixe http://localhost:8000.</p>
-      </div>
-      <div class="linha-bt"><button class="bt bt-forte" id="btCriar">Criar campanha</button>
-        <button class="bt" id="btCancelarNova">Cancelar</button></div>
-    </section>
+<section id="secNova" class="area oculto">
+  <div class="rotulo-secao"><h2>Comece pela festa</h2></div>
+  <div class="campo"><label for="nvNome">Nome da campanha</label>
+    <input id="nvNome" placeholder="Casamento Gustavo e Letícia"></div>
+  <div class="grade">
+    <div class="campo"><label for="nvNoivos">Noivos</label><input id="nvNoivos" placeholder="Gustavo e Letícia"></div>
+    <div class="campo"><label for="nvData">Data</label><input id="nvData" placeholder="14 de março de 2027"></div>
+  </div>
+  <div class="campo"><label for="nvLocal">Local</label><input id="nvLocal" placeholder="Espaço Villa Verde, Pato Branco"></div>
+  <div class="campo"><label for="nvUrl">Endereço público deste sistema</label>
+    <input id="nvUrl" placeholder="http://localhost:8000">
+    <p class="dica" style="margin-top:6px">É a base do link pessoal de cada convidado. Em teste local, deixe http://localhost:8000.</p>
+  </div>
+  <div class="linha-bt"><button class="bt bt-forte" id="btCriar">Criar campanha</button>
+    <button class="bt" id="btCancelarNova">Cancelar</button></div>
+</section>
 
+<div class="area" id="area">
+
+  <!-- ------------------ passo 1: a festa ------------------ -->
+  <div class="etapa" data-etapa="1" id="etapaFesta">
     <section id="secFesta">
-      <div class="rotulo-secao"><h2>A festa</h2><span class="olho" id="salvoFesta"></span></div>
+      <div class="rotulo-secao"><h2>1. A festa</h2><span class="olho" id="salvoFesta"></span></div>
+      <p class="dica">Esses dados aparecem na página que cada convidado vê ao confirmar presença.</p>
       <div class="grade">
         <div class="campo"><label for="cfNoivos">Noivos</label><input id="cfNoivos"></div>
         <div class="campo"><label for="cfData">Data</label><input id="cfData"></div>
@@ -227,10 +255,14 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
         <div class="campo"><label for="cfUrl">Endereço público</label><input id="cfUrl"></div>
       </div>
     </section>
+    <div class="nav-etapa"><span></span><button class="bt bt-forte" data-ir="2">Próximo: as mensagens</button></div>
+  </div>
 
+  <!-- ------------------ passo 2: as mensagens ------------------ -->
+  <div class="etapa oculto" data-etapa="2" id="etapaMensagens">
     <section>
       <div class="rotulo-secao">
-        <h2>As mensagens</h2>
+        <h2>2. As mensagens</h2>
         <span class="olho" id="contaMsg"></span>
       </div>
       <p class="dica">Escreva várias versões do convite. Dentro de cada uma, <code>{Oi|Olá|Oiê}</code>
@@ -241,12 +273,33 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
       <div class="linha-bt">
         <button class="bt" id="btAddMsg">Adicionar versão</button>
         <button class="bt" id="btExemplo">Usar exemplo</button>
-        <button class="bt bt-forte" id="btSalvarMsg">Salvar mensagens</button>
       </div>
     </section>
 
     <section>
-      <div class="rotulo-secao"><h2>Os convidados</h2></div>
+      <div class="rotulo-secao">
+        <h2>Como vai sair</h2>
+        <button class="bt bt-fino" id="btSortear" style="margin-left:auto">Sortear de novo</button>
+      </div>
+      <div class="roleta">
+        <header>
+          <span class="olho">Amostra real do que cada um recebe</span>
+          <div class="medidor" id="medidor"></div>
+        </header>
+        <div id="cartas"></div>
+        <div class="recado" id="recado"></div>
+      </div>
+    </section>
+    <div class="nav-etapa">
+      <button class="bt" data-ir="1">Voltar</button>
+      <button class="bt bt-forte" id="btProxMsg">Salvar e continuar</button>
+    </div>
+  </div>
+
+  <!-- ------------------ passo 3: os convidados ------------------ -->
+  <div class="etapa oculto" data-etapa="3" id="etapaConvidados">
+    <section>
+      <div class="rotulo-secao"><h2>3. Os convidados</h2></div>
       <p class="dica">Uma linha por pessoa: <code>nome,telefone</code>. CSV com cabeçalho também serve.
         DDI, nono dígito e duplicados são resolvidos na importação.</p>
       <div class="campo">
@@ -258,11 +311,19 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
       </div>
       <div id="saidaImport"></div>
     </section>
+    <div class="nav-etapa">
+      <button class="bt" data-ir="2">Voltar</button>
+      <button class="bt bt-forte" id="btProxConv">Próximo: o ritmo</button>
+    </div>
+  </div>
 
+  <!-- ------------------ passo 4: o ritmo ------------------ -->
+  <div class="etapa oculto" data-etapa="4" id="etapaRitmo">
     <section>
-      <div class="rotulo-secao"><h2>O ritmo</h2><span class="olho" id="salvoRitmo"></span></div>
+      <div class="rotulo-secao"><h2>4. O ritmo</h2><span class="olho" id="salvoRitmo"></span></div>
       <p class="dica">Duzentos envios em dez minutos é o padrão que faz o WhatsApp desconfiar.
-        Espalhar o disparo importa tanto quanto variar o texto.</p>
+        Espalhar o disparo importa tanto quanto variar o texto. Os valores abaixo já vêm com um
+        ritmo conservador — só ajuste se quiser.</p>
       <div class="grade-3">
         <div class="campo"><label for="rtTeto">Máx. por dia</label><input type="number" id="rtTeto" min="1" max="800"></div>
         <div class="campo"><label for="rtInicio">Começa às</label><input id="rtInicio" placeholder="09:00"></div>
@@ -282,29 +343,16 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
       </div>
       <div class="alerta" id="estimativa"></div>
     </section>
-
+    <div class="nav-etapa">
+      <button class="bt" data-ir="3">Voltar</button>
+      <button class="bt bt-forte" data-ir="5">Próximo: o disparo</button>
+    </div>
   </div>
 
-  <!-- ------------------ coluna direita ------------------ -->
-  <div class="coluna">
-
+  <!-- ------------------ passo 5: o disparo ------------------ -->
+  <div class="etapa oculto" data-etapa="5" id="etapaDisparo">
     <section>
-      <div class="rotulo-secao">
-        <h2>Como vai sair</h2>
-        <button class="bt bt-fino" id="btSortear" style="margin-left:auto">Sortear de novo</button>
-      </div>
-      <div class="roleta">
-        <header>
-          <span class="olho">Amostra real do que cada um recebe</span>
-          <div class="medidor" id="medidor"></div>
-        </header>
-        <div id="cartas"></div>
-        <div class="recado" id="recado"></div>
-      </div>
-    </section>
-
-    <section>
-      <div class="rotulo-secao"><h2>O disparo</h2><span class="olho" id="estadoEnvio">parado</span></div>
+      <div class="rotulo-secao"><h2>5. O disparo</h2><span class="olho" id="estadoEnvio">parado</span></div>
       <div class="campo">
         <label for="cfTransporte">Como enviar</label>
         <select id="cfTransporte">
@@ -332,20 +380,21 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
 
     <section>
       <div class="rotulo-secao"><h2>Quem respondeu</h2>
-        <div class="linha-bt" style="margin-left:auto">
-          <button class="bt bt-fino" data-filtro="todos">Todos</button>
-          <button class="bt bt-fino" data-filtro="sim">Vão</button>
-          <button class="bt bt-fino" data-filtro="nao">Não vão</button>
-          <button class="bt bt-fino" data-filtro="aguardando">Sem resposta</button>
-          <button class="bt bt-fino" data-filtro="problema">Com problema</button>
-        </div>
+      </div>
+      <div class="linha-bt">
+        <button class="bt bt-fino" data-filtro="todos">Todos</button>
+        <button class="bt bt-fino" data-filtro="sim">Vão</button>
+        <button class="bt bt-fino" data-filtro="nao">Não vão</button>
+        <button class="bt bt-fino" data-filtro="aguardando">Sem resposta</button>
+        <button class="bt bt-fino" data-filtro="problema">Com problema</button>
       </div>
       <div class="rolagem"><table class="tabela"><thead><tr>
         <th>Convidado</th><th>Telefone</th><th>Envio</th><th>Resposta</th><th>Obs.</th>
       </tr></thead><tbody id="corpoTabela"></tbody></table></div>
     </section>
-
+    <div class="nav-etapa"><button class="bt" data-ir="4">Voltar</button><span></span></div>
   </div>
+
 </div>
 
 <script>
@@ -365,7 +414,7 @@ const PLACEHOLDERS = [
   ["{link}","link pessoal"],["{noivos}","noivos"],["{data}","data"],["{local}","local"]
 ];
 
-let campanha = null, convidados = [], filtro = "todos", fonte = null, ultimoFoco = null;
+let campanha = null, convidados = [], filtro = "todos", fonte = null, ultimoFoco = null, etapaAtual = 1;
 const $ = s => document.querySelector(s);
 const esc = t => (t ?? "").toString().replace(/[<>&]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
 
@@ -376,6 +425,26 @@ async function api(caminho, opcoes){
   return corpo;
 }
 const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), ms); }; };
+
+/* ------------------------- assistente (passos) ------------------------- */
+function irPara(n){
+  etapaAtual = n;
+  document.querySelectorAll(".etapa").forEach(e => e.classList.toggle("oculto", +e.dataset.etapa !== n));
+  document.querySelectorAll("#stepper li").forEach(li => {
+    const p = +li.dataset.passo;
+    li.classList.toggle("atual", p === n);
+    li.classList.toggle("feito", p < n);
+  });
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+document.querySelectorAll("[data-ir]").forEach(b => b.addEventListener("click", () => irPara(+b.dataset.ir)));
+document.querySelectorAll("#stepper li").forEach(li => li.addEventListener("click", () => irPara(+li.dataset.passo)));
+
+function etapaInicial(c){
+  if(!c.templates.length) return 2;
+  if(c.resumo.total === 0) return 3;
+  return 5;
+}
 
 /* ------------------------- campanhas ------------------------- */
 async function carregarCampanhas(){
@@ -392,7 +461,8 @@ async function carregarCampanhas(){
 
 function mostrarNova(sim){
   $("#secNova").classList.toggle("oculto", !sim);
-  document.querySelectorAll(".coluna > section:not(#secNova)").forEach(s => s.classList.toggle("oculto", sim));
+  $("#passos").classList.toggle("oculto", sim);
+  $("#area").classList.toggle("oculto", sim);
   if(sim && !$("#nvUrl").value) $("#nvUrl").value = location.origin;
 }
 
@@ -417,6 +487,7 @@ async function abrirCampanha(id){
   await Promise.all([carregarConvidados(), atualizarSituacao()]);
   atualizarPrevia();
   ligarStream(id);
+  irPara(etapaInicial(campanha));
 }
 
 $("#seletorCampanha").addEventListener("change", e => abrirCampanha(e.target.value));
@@ -507,11 +578,12 @@ $("#btAddMsg").addEventListener("click", () => {
   desenharMensagens(c); atualizarPrevia();
 });
 $("#btExemplo").addEventListener("click", () => { desenharMensagens(EXEMPLOS); atualizarPrevia(); });
-$("#btSalvarMsg").addEventListener("click", async () => {
+$("#btProxMsg").addEventListener("click", async () => {
   try{
     const r = await api(`/api/campanhas/${campanha.id}/mensagens`,
       {method:"POST", body: JSON.stringify({corpos: lerMensagens()})});
     piscar("#contaMsg", `${r.quantidade} salvas`);
+    irPara(3);
   }catch(e){ alert(e.message); }
 });
 $("#btSortear").addEventListener("click", () => atualizarPrevia(true));
@@ -538,23 +610,46 @@ $("#arquivo").addEventListener("change", async e => {
   const f = e.target.files[0]; if(!f) return;
   $("#txConvidados").value = await f.text();
 });
+function resultadoImportHtml(r){
+  let html = `<div class="alerta"><b>${r.novos}</b> convidados adicionados.`;
+  if(r.ja_existiam) html += ` ${r.ja_existiam} já estavam na lista.`;
+  if(r.duplicados_no_arquivo) html += ` ${r.duplicados_no_arquivo} linhas repetidas foram unificadas.`;
+  html += `</div>`;
+  if(r.avisos.length) html += `<div class="alerta">Confira estes: ` +
+    r.avisos.map(a => `linha ${a.linha} (${esc(a.motivo)})`).join("; ") + `</div>`;
+  if(r.rejeitados.length) html += `<div class="alerta ruim">Fora da lista:<br>` +
+    r.rejeitados.map(a => `linha ${a.linha}: <code>${esc(a.conteudo)}</code> — ${esc(a.motivo)}`)
+      .join("<br>") + `</div>`;
+  return html;
+}
+
+async function importarConvidados(){
+  const texto = $("#txConvidados").value;
+  const r = await api(`/api/campanhas/${campanha.id}/convidados`,
+    {method:"POST", body: JSON.stringify({texto})});
+  $("#saidaImport").innerHTML = resultadoImportHtml(r);
+  $("#txConvidados").value = "";
+  pintarPlacar(r.resumo); await carregarConvidados(); atualizarPrevia();
+  return r;
+}
+
 $("#btImportar").addEventListener("click", async () => {
-  try{
-    const r = await api(`/api/campanhas/${campanha.id}/convidados`,
-      {method:"POST", body: JSON.stringify({texto: $("#txConvidados").value})});
-    let html = `<div class="alerta"><b>${r.novos}</b> convidados adicionados.`;
-    if(r.ja_existiam) html += ` ${r.ja_existiam} já estavam na lista.`;
-    if(r.duplicados_no_arquivo) html += ` ${r.duplicados_no_arquivo} linhas repetidas foram unificadas.`;
-    html += `</div>`;
-    if(r.avisos.length) html += `<div class="alerta">Confira estes: ` +
-      r.avisos.map(a => `linha ${a.linha} (${esc(a.motivo)})`).join("; ") + `</div>`;
-    if(r.rejeitados.length) html += `<div class="alerta ruim">Fora da lista:<br>` +
-      r.rejeitados.map(a => `linha ${a.linha}: <code>${esc(a.conteudo)}</code> — ${esc(a.motivo)}`)
-        .join("<br>") + `</div>`;
-    $("#saidaImport").innerHTML = html;
-    $("#txConvidados").value = "";
-    pintarPlacar(r.resumo); await carregarConvidados(); atualizarPrevia();
-  }catch(e){ $("#saidaImport").innerHTML = `<div class="alerta ruim">${esc(e.message)}</div>`; }
+  try{ await importarConvidados(); }
+  catch(e){ $("#saidaImport").innerHTML = `<div class="alerta ruim">${esc(e.message)}</div>`; }
+});
+
+$("#btProxConv").addEventListener("click", async () => {
+  const texto = $("#txConvidados").value.trim();
+  if(texto){
+    try{
+      const r = await importarConvidados();
+      if(r.novos === 0 && !r.ja_existiam && r.rejeitados.length) return; // fica pra corrigir os erros
+    }catch(e){ $("#saidaImport").innerHTML = `<div class="alerta ruim">${esc(e.message)}</div>`; return; }
+  } else if(!convidados.length){
+    $("#saidaImport").innerHTML = `<div class="alerta ruim">Cole a lista de convidados ou envie um CSV antes de continuar.</div>`;
+    return;
+  }
+  irPara(4);
 });
 
 async function carregarConvidados(){
@@ -613,6 +708,8 @@ function pintarPlacar(r){
     <div><b>${r.aguardando}</b><span>sem resposta</span></div>
     <div><b>${r.pendentes}</b><span>a enviar</span></div>
     ${r.invalidos + r.falhas ? `<div class="nao"><b>${r.invalidos + r.falhas}</b><span>com problema</span></div>` : ""}`;
+  const opt = $("#seletorCampanha").selectedOptions[0];
+  if(opt && campanha) opt.textContent = `${campanha.nome} — ${r.total} convidados`;
 }
 
 /* ------------------------- disparo ------------------------- */

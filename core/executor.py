@@ -16,7 +16,7 @@ from typing import Callable
 
 from .db import Banco
 from .limites import Ritmo, ordenar_para_envio
-from .transportes import Resultado, SessaoPerdida, Transporte
+from .transportes import EnvioCancelado, Resultado, SessaoPerdida, Transporte
 from .variacoes import ContextoCampanha, SeletorDeVariacoes
 
 
@@ -167,7 +167,12 @@ class Executor:
         try:
             self.estado = "preparando"
             self._emitir("info", f"Conectando via {getattr(transporte, 'nome', 'transporte')}...")
-            transporte.preparar()
+            transporte.preparar(deve_parar=self._parar.is_set)
+        except EnvioCancelado:
+            self.estado = "parada"
+            self.banco.atualizar_campanha(campanha_id, estado="pausada")
+            self._emitir("info", "Parado por você antes de conectar.")
+            return
         except SessaoPerdida as e:
             self.estado = "parada"
             self._emitir("erro", str(e))
@@ -227,7 +232,11 @@ class Executor:
                 }
 
                 try:
-                    resultado: Resultado = transporte.enviar(convidado.telefone, texto)
+                    resultado: Resultado = transporte.enviar(
+                        convidado.telefone, texto, deve_parar=self._parar.is_set
+                    )
+                except EnvioCancelado:
+                    break
                 except SessaoPerdida as e:
                     self._emitir("erro", f"{e} Campanha interrompida; nada foi perdido.")
                     break
@@ -260,7 +269,9 @@ class Executor:
             except Exception:
                 pass
             self.atual = None
-            restantes = self.banco.resumo(campanha_id)["pendentes"]
+            # inclui 'falhou' porque banco.pendentes() os retoma na próxima tentativa;
+            # resumo()['pendentes'] sozinho não contaria isso e diria "concluída" mesmo com falhas.
+            restantes = len(self.banco.pendentes(campanha_id))
             if self._parar.is_set():
                 self.estado = "parada"
                 self.banco.atualizar_campanha(campanha_id, estado="pausada")

@@ -101,6 +101,16 @@ def ver_campanha(cid: int):
     }
 
 
+@app.delete("/api/campanhas/{cid}")
+def apagar_campanha(cid: int):
+    if not banco.campanha(cid):
+        raise HTTPException(404, "Campanha não encontrada")
+    if executor.rodando() and executor.campanha_id == cid:
+        raise HTTPException(409, "Pare o envio antes de apagar esta campanha.")
+    banco.apagar_campanha(cid)
+    return {"ok": True}
+
+
 @app.put("/api/campanhas/{cid}")
 def salvar_campanha(cid: int, dados: dict = Body(...)):
     if not banco.campanha(cid):

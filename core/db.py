@@ -147,6 +147,13 @@ class Banco:
             ).fetchall()
         return [dict(r) for r in rows]
 
+    def apagar_campanha(self, campanha_id: int) -> None:
+        with self.conexao() as con:
+            # templates/convidados/respostas somem via ON DELETE CASCADE;
+            # eventos não tem FK declarada, então precisa apagar à parte.
+            con.execute("DELETE FROM eventos WHERE campanha_id = %s", (campanha_id,))
+            con.execute("DELETE FROM campanhas WHERE id = %s", (campanha_id,))
+
     # -- templates --------------------------------------------------------- #
 
     def salvar_templates(self, campanha_id: int, corpos: list[str]) -> None:

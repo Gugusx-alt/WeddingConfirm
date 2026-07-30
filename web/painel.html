@@ -116,7 +116,16 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
 .bt-forte:hover{background:#DCB35C;border-color:#DCB35C}
 .bt-forte:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .bt-fino{padding:4px 9px;font-size:12.5px}
+.bt-perigo{color:var(--rosa);border-color:#4B2C36}
+.bt-perigo:hover{border-color:var(--rosa);background:#2A1B22}
 .linha-bt{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---------- campanhas (gerenciar) ---------- */
+.campanha-card{display:flex;justify-content:space-between;align-items:center;gap:14px;
+  border:1px solid var(--linha);border-radius:4px;padding:13px 15px;margin-bottom:10px;
+  background:var(--tinta-2);flex-wrap:wrap}
+.campanha-info strong{font-family:var(--display);font-size:17px;font-weight:400;display:block;margin-bottom:3px}
+.campanha-info .olho{letter-spacing:.08em}
 
 /* ---------- mensagens ---------- */
 .msg{border:1px solid var(--linha);border-radius:4px;margin-bottom:10px;background:var(--tinta-2)}
@@ -205,6 +214,7 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
     <div class="linha-bt">
       <select id="seletorCampanha" style="width:auto;min-width:210px"></select>
       <button class="bt bt-fino" id="btNova">Nova campanha</button>
+      <button class="bt bt-fino" id="btGerenciar">Gerenciar campanhas</button>
       <a class="bt bt-fino" id="btPlanilha" href="#" style="text-decoration:none">Baixar planilha</a>
     </div>
   </div>
@@ -237,6 +247,13 @@ label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14e
   </div>
   <div class="linha-bt"><button class="bt bt-forte" id="btCriar">Criar campanha</button>
     <button class="bt" id="btCancelarNova">Cancelar</button></div>
+</section>
+
+<section id="secGerenciar" class="area oculto">
+  <div class="rotulo-secao"><h2>Campanhas</h2></div>
+  <p class="dica">Todas as campanhas criadas neste sistema. Apagar remove convidados, respostas e histórico — não tem como desfazer.</p>
+  <div id="listaCampanhas"></div>
+  <div class="linha-bt"><button class="bt" id="btFecharGerenciar">Fechar</button></div>
 </section>
 
 <div class="area" id="area">
@@ -459,12 +476,60 @@ async function carregarCampanhas(){
   await abrirCampanha(sel.value);
 }
 
+function mostrarView(vista){ // "area" | "nova" | "gerenciar"
+  $("#passos").classList.toggle("oculto", vista !== "area");
+  $("#area").classList.toggle("oculto", vista !== "area");
+  $("#secNova").classList.toggle("oculto", vista !== "nova");
+  $("#secGerenciar").classList.toggle("oculto", vista !== "gerenciar");
+}
+
 function mostrarNova(sim){
-  $("#secNova").classList.toggle("oculto", !sim);
-  $("#passos").classList.toggle("oculto", sim);
-  $("#area").classList.toggle("oculto", sim);
+  mostrarView(sim ? "nova" : "area");
   if(sim && !$("#nvUrl").value) $("#nvUrl").value = location.origin;
 }
+
+async function abrirGerenciar(){
+  const lista = await api("/api/campanhas");
+  $("#listaCampanhas").innerHTML = lista.length ? lista.map(c => `
+    <div class="campanha-card" data-id="${c.id}">
+      <div class="campanha-info">
+        <strong>${esc(c.nome)}</strong>
+        <span class="olho">${c.resumo.total} convidados · ${c.resumo.confirmados} confirmados · ${c.estado}</span>
+      </div>
+      <div class="linha-bt">
+        <button class="bt bt-fino" data-abrir="${c.id}">Abrir</button>
+        <button class="bt bt-fino bt-perigo" data-apagar="${c.id}">Apagar</button>
+      </div>
+    </div>`).join("") : `<div class="vazio"><strong>Nenhuma campanha ainda</strong></div>`;
+  mostrarView("gerenciar");
+}
+$("#btGerenciar").addEventListener("click", abrirGerenciar);
+$("#btFecharGerenciar").addEventListener("click", () => mostrarView("area"));
+
+$("#listaCampanhas").addEventListener("click", async e => {
+  const abrir = e.target.closest("[data-abrir]");
+  if(abrir){
+    mostrarView("area");
+    $("#seletorCampanha").value = abrir.dataset.abrir;
+    await abrirCampanha(abrir.dataset.abrir);
+    return;
+  }
+  const apagar = e.target.closest("[data-apagar]");
+  if(apagar){
+    const id = apagar.dataset.apagar;
+    const nome = apagar.closest(".campanha-card").querySelector("strong").textContent;
+    if(!confirm(`Apagar "${nome}"? Convidados, respostas e histórico somem junto. Não tem como desfazer.`)) return;
+    try{
+      await api(`/api/campanhas/${id}`, {method:"DELETE"});
+      if(campanha && String(campanha.id) === id){
+        campanha = null;
+        localStorage.removeItem("wc:campanha");
+      }
+      await carregarCampanhas();
+      await abrirGerenciar();
+    }catch(err){ alert(err.message); }
+  }
+});
 
 async function abrirCampanha(id){
   localStorage.setItem("wc:campanha", id);

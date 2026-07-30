@@ -1,0 +1,6 @@
+# Uma linha por convidado. Nome primeiro, telefone depois — ou o contrário.
+# Linhas com # são ignoradas. CSV com cabeçalho nome,telefone também funciona.
+Ana Beatriz Souza,46 99988-7766
+Carlos Eduardo,(46) 98877-6655
+Tia Marlene,4691234567
+Padrinho João,+55 11 91234-5678

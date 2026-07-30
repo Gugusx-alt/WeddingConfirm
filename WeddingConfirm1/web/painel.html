@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Central de confirmações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..800,0..100,0..1&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tinta:#14172A; --tinta-2:#1C2038; --tinta-3:#252A47;
+  --linha:#333A5E; --papel:#ECE8DF; --papel-2:#9CA0BA;
+  --ouro:#C9A24B; --hortela:#58BD90; --rosa:#DB7F92;
+  --display:"Fraunces",Georgia,serif;
+  --corpo:"Archivo","Helvetica Neue",system-ui,sans-serif;
+  --dado:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--tinta); color:var(--papel); font-family:var(--corpo);
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--ouro)}
+h1,h2,h3{margin:0;font-weight:400}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--ouro);outline-offset:2px}
+
+/* ---------- cabeçalho ---------- */
+.topo{border-bottom:1px solid var(--linha);padding:22px 28px 0}
+.marca{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.olho{font-family:var(--dado);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--papel-2)}
+.placar{display:flex;gap:38px;flex-wrap:wrap;margin:14px 0 18px}
+.placar div{min-width:88px}
+.placar b{
+  display:block;font-family:var(--display);font-size:clamp(34px,5vw,54px);
+  font-weight:300;font-variation-settings:"SOFT" 60,"WONK" 1;line-height:.95;
+  letter-spacing:-.01em;
+}
+.placar span{font-family:var(--dado);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--papel-2)}
+.placar .sim b{color:var(--hortela)} .placar .nao b{color:var(--rosa)} .placar .ouro b{color:var(--ouro)}
+
+/* barra segmentada: um traço por convidado */
+.trilha{display:flex;gap:2px;height:9px;margin-bottom:20px;overflow:hidden}
+.trilha i{flex:1 1 3px;min-width:2px;background:var(--tinta-3);border-radius:1px;transition:background .4s}
+.trilha i.enviado{background:var(--ouro)}
+.trilha i.sim{background:var(--hortela)}
+.trilha i.nao{background:var(--rosa)}
+.trilha i.ruim{background:#5A4152}
+
+/* ---------- layout ---------- */
+.corpo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:0;align-items:start}
+.coluna{padding:26px 28px 60px;min-width:0}
+.coluna+.coluna{border-left:1px solid var(--linha)}
+
+section{margin-bottom:34px}
+.rotulo-secao{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.rotulo-secao h2{font-family:var(--display);font-size:21px;font-variation-settings:"SOFT" 60,"WONK" 1}
+.rotulo-secao .olho{margin-left:auto}
+.dica{color:var(--papel-2);font-size:13.5px;margin:0 0 12px}
+
+/* ---------- controles ---------- */
+input,textarea,select{
+  width:100%;background:var(--tinta-2);color:var(--papel);border:1px solid var(--linha);
+  border-radius:3px;padding:9px 11px;font-family:inherit;font-size:14px;
+}
+textarea{resize:vertical;line-height:1.55}
+input[type=number]{font-family:var(--dado)}
+label{display:block;font-family:var(--dado);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--papel-2);margin-bottom:5px}
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grade-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.campo{margin-bottom:12px}
+
+.bt{background:none;border:1px solid var(--linha);color:var(--papel);
+  border-radius:3px;padding:8px 14px;transition:border-color .15s,background .15s}
+.bt:hover{border-color:var(--papel-2)}
+.bt-forte{background:var(--ouro);border-color:var(--ouro);color:#20180A;font-weight:600}
+.bt-forte:hover{background:#DCB35C;border-color:#DCB35C}
+.bt-forte:disabled{opacity:.4;cursor:not-allowed}
+.bt-fino{padding:4px 9px;font-size:12.5px}
+.linha-bt{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---------- mensagens ---------- */
+.msg{border:1px solid var(--linha);border-radius:4px;margin-bottom:10px;background:var(--tinta-2)}
+.msg header{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--linha)}
+.msg header span{font-family:var(--dado);font-size:11px;letter-spacing:.1em;color:var(--papel-2)}
+.msg textarea{border:0;background:none;border-radius:0}
+.msg .apagar{background:none;border:0;color:var(--papel-2);margin-left:auto;padding:2px 6px}
+.msg .apagar:hover{color:var(--rosa)}
+.fichas{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 14px}
+.ficha{font-family:var(--dado);font-size:11.5px;background:var(--tinta-3);border:1px solid var(--linha);
+  color:var(--papel);border-radius:99px;padding:3px 9px}
+.ficha:hover{border-color:var(--ouro);color:var(--ouro)}
+
+/* ---------- assinatura: roleta de variações ---------- */
+.roleta{border:1px solid var(--linha);border-radius:4px;background:linear-gradient(180deg,#1A1E33,#171B2E)}
+.roleta>header{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--linha)}
+.medidor{margin-left:auto;font-family:var(--dado);font-size:11.5px;text-align:right}
+.medidor b{font-size:15px;display:block;color:var(--ouro)}
+.medidor.atencao b{color:#E0B24A} .medidor.erro b{color:var(--rosa)}
+.carta{padding:13px 15px;border-bottom:1px solid #23273E;position:relative}
+.carta:last-child{border-bottom:0}
+.carta p{margin:0;white-space:pre-wrap;font-size:13.5px;line-height:1.55}
+.carta .selo{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;
+  font-family:var(--dado);font-size:10.5px;letter-spacing:.1em;color:var(--papel-2)}
+.carta .selo em{font-style:normal;color:#6E7495}
+.recado{padding:11px 14px;font-size:13px;color:var(--papel-2);border-top:1px solid var(--linha)}
+.recado.erro{color:var(--rosa)}
+
+/* ---------- log ---------- */
+.log{border:1px solid var(--linha);border-radius:4px;background:#11142433;
+  max-height:340px;overflow:auto;font-family:var(--dado);font-size:12.5px}
+.log div{padding:5px 12px;border-bottom:1px solid #1E2236;display:flex;gap:10px}
+.log time{color:#5F6485;flex:0 0 52px}
+.log .ok{color:var(--hortela)} .log .erro{color:var(--rosa)}
+.log .aviso{color:#E0B24A} .log .info{color:var(--papel-2)}
+.agora{font-family:var(--dado);font-size:12.5px;color:var(--papel-2);margin:10px 0 0;min-height:18px}
+
+/* ---------- tabela ---------- */
+.tabela{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+.tabela th{text-align:left;font-family:var(--dado);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--papel-2);font-weight:400;padding:6px 8px;border-bottom:1px solid var(--linha)}
+.tabela td{padding:6px 8px;border-bottom:1px solid #1E2236;vertical-align:top}
+.tabela td.tel{font-family:var(--dado);font-size:12px;color:var(--papel-2);white-space:nowrap}
+.selo-status{font-family:var(--dado);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--linha);border-radius:99px;padding:1px 7px;white-space:nowrap}
+.s-enviado{color:var(--ouro);border-color:#4A3D22}
+.s-pendente{color:var(--papel-2)}
+.s-invalido,.s-falhou{color:var(--rosa);border-color:#4B2C36}
+.s-optout{color:#6E7495}
+.s-sim{color:var(--hortela);border-color:#26493A}
+.s-nao{color:var(--rosa);border-color:#4B2C36}
+.rolagem{max-height:420px;overflow:auto}
+
+.vazio{border:1px dashed var(--linha);border-radius:4px;padding:26px;text-align:center;color:var(--papel-2)}
+.vazio strong{display:block;font-family:var(--display);font-size:20px;color:var(--papel);
+  font-weight:400;margin-bottom:6px}
+.alerta{border-left:2px solid var(--ouro);background:#1E2036;padding:10px 13px;
+  font-size:13px;margin:12px 0;border-radius:0 3px 3px 0}
+.alerta.ruim{border-color:var(--rosa)}
+.oculto{display:none!important}
+
+@media (max-width:900px){
+  .corpo{grid-template-columns:1fr}
+  .coluna+.coluna{border-left:0;border-top:1px solid var(--linha)}
+  .coluna{padding:22px 18px 40px}
+  .topo{padding:18px 18px 0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="topo">
+  <div class="marca">
+    <span class="olho">Central de confirmações</span>
+    <div class="linha-bt">
+      <select id="seletorCampanha" style="width:auto;min-width:210px"></select>
+      <button class="bt bt-fino" id="btNova">Nova campanha</button>
+      <a class="bt bt-fino" id="btPlanilha" href="#" style="text-decoration:none">Baixar planilha</a>
+    </div>
+  </div>
+  <div class="placar" id="placar"></div>
+  <div class="trilha" id="trilha"></div>
+</div>
+
+<div class="corpo">
+  <!-- ------------------ coluna esquerda ------------------ -->
+  <div class="coluna">
+
+    <section id="secNova" class="oculto">
+      <div class="rotulo-secao"><h2>Comece pela festa</h2></div>
+      <div class="campo"><label for="nvNome">Nome da campanha</label>
+        <input id="nvNome" placeholder="Casamento Gustavo e Letícia"></div>
+      <div class="grade">
+        <div class="campo"><label for="nvNoivos">Noivos</label><input id="nvNoivos" placeholder="Gustavo e Letícia"></div>
+        <div class="campo"><label for="nvData">Data</label><input id="nvData" placeholder="14 de março de 2027"></div>
+      </div>
+      <div class="campo"><label for="nvLocal">Local</label><input id="nvLocal" placeholder="Espaço Villa Verde, Pato Branco"></div>
+      <div class="campo"><label for="nvUrl">Endereço público deste sistema</label>
+        <input id="nvUrl" placeholder="http://localhost:8000">
+        <p class="dica" style="margin-top:6px">É a base do link pessoal de cada convidado. Em teste local, deixe http://localhost:8000.</p>
+      </div>
+      <div class="linha-bt"><button class="bt bt-forte" id="btCriar">Criar campanha</button>
+        <button class="bt" id="btCancelarNova">Cancelar</button></div>
+    </section>
+
+    <section id="secFesta">
+      <div class="rotulo-secao"><h2>A festa</h2><span class="olho" id="salvoFesta"></span></div>
+      <div class="grade">
+        <div class="campo"><label for="cfNoivos">Noivos</label><input id="cfNoivos"></div>
+        <div class="campo"><label for="cfData">Data</label><input id="cfData"></div>
+      </div>
+      <div class="grade">
+        <div class="campo"><label for="cfLocal">Local</label><input id="cfLocal"></div>
+        <div class="campo"><label for="cfUrl">Endereço público</label><input id="cfUrl"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="rotulo-secao">
+        <h2>As mensagens</h2>
+        <span class="olho" id="contaMsg"></span>
+      </div>
+      <p class="dica">Escreva várias versões do convite. Dentro de cada uma, <code>{Oi|Olá|Oiê}</code>
+        sorteia uma das opções a cada envio. Quanto mais opções, mais difícil dois convidados
+        receberem o mesmo texto.</p>
+      <div class="fichas" id="fichas"></div>
+      <div id="listaMsg"></div>
+      <div class="linha-bt">
+        <button class="bt" id="btAddMsg">Adicionar versão</button>
+        <button class="bt" id="btExemplo">Usar exemplo</button>
+        <button class="bt bt-forte" id="btSalvarMsg">Salvar mensagens</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="rotulo-secao"><h2>Os convidados</h2></div>
+      <p class="dica">Uma linha por pessoa: <code>nome,telefone</code>. CSV com cabeçalho também serve.
+        DDI, nono dígito e duplicados são resolvidos na importação.</p>
+      <div class="campo">
+        <textarea id="txConvidados" rows="5" placeholder="Ana Beatriz Souza,46 99988-7766&#10;Tio Zé,4698887-1122"></textarea>
+      </div>
+      <div class="linha-bt">
+        <input type="file" id="arquivo" accept=".csv,.txt" style="width:auto;padding:4px;font-size:12.5px">
+        <button class="bt bt-forte" id="btImportar">Importar</button>
+      </div>
+      <div id="saidaImport"></div>
+    </section>
+
+    <section>
+      <div class="rotulo-secao"><h2>O ritmo</h2><span class="olho" id="salvoRitmo"></span></div>
+      <p class="dica">Duzentos envios em dez minutos é o padrão que faz o WhatsApp desconfiar.
+        Espalhar o disparo importa tanto quanto variar o texto.</p>
+      <div class="grade-3">
+        <div class="campo"><label for="rtTeto">Máx. por dia</label><input type="number" id="rtTeto" min="1" max="800"></div>
+        <div class="campo"><label for="rtInicio">Começa às</label><input id="rtInicio" placeholder="09:00"></div>
+        <div class="campo"><label for="rtFim">Para às</label><input id="rtFim" placeholder="20:30"></div>
+      </div>
+      <div class="grade-3">
+        <div class="campo"><label for="rtMediana">Intervalo médio (s)</label><input type="number" id="rtMediana" min="5" max="600"></div>
+        <div class="campo"><label for="rtLote">Envios por lote</label><input type="number" id="rtLote" min="3" max="60"></div>
+        <div class="campo"><label for="rtAquece">Dia de uso do número</label>
+          <select id="rtAquece">
+            <option value="">Número já usado antes</option>
+            <option value="1">1º dia — máx. 20</option>
+            <option value="2">2º dia — máx. 40</option>
+            <option value="3">3º dia — máx. 80</option>
+            <option value="4">4º dia — máx. 150</option>
+          </select></div>
+      </div>
+      <div class="alerta" id="estimativa"></div>
+    </section>
+
+  </div>
+
+  <!-- ------------------ coluna direita ------------------ -->
+  <div class="coluna">
+
+    <section>
+      <div class="rotulo-secao">
+        <h2>Como vai sair</h2>
+        <button class="bt bt-fino" id="btSortear" style="margin-left:auto">Sortear de novo</button>
+      </div>
+      <div class="roleta">
+        <header>
+          <span class="olho">Amostra real do que cada um recebe</span>
+          <div class="medidor" id="medidor"></div>
+        </header>
+        <div id="cartas"></div>
+        <div class="recado" id="recado"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="rotulo-secao"><h2>O disparo</h2><span class="olho" id="estadoEnvio">parado</span></div>
+      <div class="campo">
+        <label for="cfTransporte">Como enviar</label>
+        <select id="cfTransporte">
+          <option value="simulado">Simulação — não envia nada, só testa</option>
+          <option value="whatsapp_web">WhatsApp Web — abre o Chrome e você lê o QR</option>
+          <option value="cloud_api">API oficial do WhatsApp Business</option>
+        </select>
+      </div>
+      <div id="camposCloud" class="oculto">
+        <div class="grade">
+          <div class="campo"><label for="apiId">Phone number ID</label><input id="apiId"></div>
+          <div class="campo"><label for="apiTpl">Nome do template aprovado</label><input id="apiTpl"></div>
+        </div>
+        <div class="campo"><label for="apiToken">Token de acesso</label><input id="apiToken" type="password"></div>
+      </div>
+      <div class="linha-bt">
+        <button class="bt bt-forte" id="btIniciar">Começar a enviar</button>
+        <button class="bt oculto" id="btPausar">Pausar</button>
+        <button class="bt oculto" id="btRetomar">Retomar</button>
+        <button class="bt oculto" id="btParar">Parar</button>
+      </div>
+      <p class="agora" id="agora"></p>
+      <div class="log" id="log"></div>
+    </section>
+
+    <section>
+      <div class="rotulo-secao"><h2>Quem respondeu</h2>
+        <div class="linha-bt" style="margin-left:auto">
+          <button class="bt bt-fino" data-filtro="todos">Todos</button>
+          <button class="bt bt-fino" data-filtro="sim">Vão</button>
+          <button class="bt bt-fino" data-filtro="nao">Não vão</button>
+          <button class="bt bt-fino" data-filtro="aguardando">Sem resposta</button>
+          <button class="bt bt-fino" data-filtro="problema">Com problema</button>
+        </div>
+      </div>
+      <div class="rolagem"><table class="tabela"><thead><tr>
+        <th>Convidado</th><th>Telefone</th><th>Envio</th><th>Resposta</th><th>Obs.</th>
+      </tr></thead><tbody id="corpoTabela"></tbody></table></div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+const EXEMPLOS = [
+`{Oi|Olá|Oiê}, {primeiro_nome}! {Tudo bem|Tudo certo|Como você está}?
+{Estamos|Ficamos} {muito felizes|super animados} de {te convidar|convidar você} para o nosso casamento, dia {data}.
+{Confirma sua presença|Dá pra confirmar} {aqui|neste link}: {link}`,
+`{primeiro_nome}, {que bom te falar|passando pra te contar}! O casamento de {noivos} {está chegando|é logo}: {data}, em {local}.
+{A gente ia amar|Seria muito bom} {ter você lá|te ver lá}.
+{Confirma|Responde} por aqui, {é rapidinho|leva um minuto}: {link}`,
+`{saudacao}, {primeiro_nome}! {Aqui é sobre|Sobre} o casamento de {noivos}, dia {data}.
+{Precisamos|A gente precisa} {saber|fechar} quem vem, {pro buffet|pra organizar as mesas}.
+{Toca aqui|É neste link}: {link}`
+];
+const PLACEHOLDERS = [
+  ["{primeiro_nome}","primeiro nome"],["{nome}","nome completo"],["{saudacao}","bom dia / boa tarde"],
+  ["{link}","link pessoal"],["{noivos}","noivos"],["{data}","data"],["{local}","local"]
+];
+
+let campanha = null, convidados = [], filtro = "todos", fonte = null, ultimoFoco = null;
+const $ = s => document.querySelector(s);
+const esc = t => (t ?? "").toString().replace(/[<>&]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+
+async function api(caminho, opcoes){
+  const r = await fetch(caminho, {headers:{"Content-Type":"application/json"}, ...opcoes});
+  const corpo = r.headers.get("content-type")?.includes("json") ? await r.json() : null;
+  if(!r.ok) throw new Error(corpo?.erro || `Erro ${r.status}`);
+  return corpo;
+}
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), ms); }; };
+
+/* ------------------------- campanhas ------------------------- */
+async function carregarCampanhas(){
+  const lista = await api("/api/campanhas");
+  const sel = $("#seletorCampanha");
+  sel.innerHTML = lista.map(c =>
+    `<option value="${c.id}">${esc(c.nome)} — ${c.resumo.total} convidados</option>`).join("");
+  if(!lista.length){ mostrarNova(true); return; }
+  mostrarNova(false);
+  const guardada = localStorage.getItem("wc:campanha");
+  sel.value = lista.some(c => String(c.id) === guardada) ? guardada : lista[0].id;
+  await abrirCampanha(sel.value);
+}
+
+function mostrarNova(sim){
+  $("#secNova").classList.toggle("oculto", !sim);
+  document.querySelectorAll(".coluna > section:not(#secNova)").forEach(s => s.classList.toggle("oculto", sim));
+  if(sim && !$("#nvUrl").value) $("#nvUrl").value = location.origin;
+}
+
+async function abrirCampanha(id){
+  localStorage.setItem("wc:campanha", id);
+  campanha = await api(`/api/campanhas/${id}`);
+  $("#btPlanilha").href = `/api/campanhas/${id}/planilha.csv`;
+  $("#cfNoivos").value = campanha.noivos || "";
+  $("#cfData").value = campanha.data_evento || "";
+  $("#cfLocal").value = campanha.local || "";
+  $("#cfUrl").value = campanha.base_url || location.origin;
+  const r = campanha.ritmo || {};
+  $("#rtTeto").value = r.teto_diario ?? 150;
+  $("#rtInicio").value = r.hora_inicio ?? "09:00";
+  $("#rtFim").value = r.hora_fim ?? "20:30";
+  $("#rtMediana").value = r.intervalo_mediano_s ?? 32;
+  $("#rtLote").value = r.tamanho_lote ?? 18;
+  $("#rtAquece").value = r.dia_de_aquecimento ?? "";
+  desenharMensagens(campanha.templates.length ? campanha.templates : [EXEMPLOS[0]]);
+  pintarPlacar(campanha.resumo);
+  pintarEstimativa(campanha.estimativa);
+  await Promise.all([carregarConvidados(), atualizarSituacao()]);
+  atualizarPrevia();
+  ligarStream(id);
+}
+
+$("#seletorCampanha").addEventListener("change", e => abrirCampanha(e.target.value));
+$("#btNova").addEventListener("click", () => mostrarNova(true));
+$("#btCancelarNova").addEventListener("click", () => mostrarNova(false));
+$("#btCriar").addEventListener("click", async () => {
+  try{
+    const {id} = await api("/api/campanhas", {method:"POST", body: JSON.stringify({
+      nome:$("#nvNome").value, noivos:$("#nvNoivos").value, data_evento:$("#nvData").value,
+      local:$("#nvLocal").value, base_url:$("#nvUrl").value || location.origin })});
+    localStorage.setItem("wc:campanha", id);
+    await carregarCampanhas();
+    $("#seletorCampanha").value = id; await abrirCampanha(id);
+  }catch(e){ alert(e.message); }
+});
+
+const salvarFesta = debounce(async () => {
+  if(!campanha) return;
+  await api(`/api/campanhas/${campanha.id}`, {method:"PUT", body: JSON.stringify({
+    noivos:$("#cfNoivos").value, data_evento:$("#cfData").value,
+    local:$("#cfLocal").value, base_url:$("#cfUrl").value })});
+  campanha.noivos = $("#cfNoivos").value; campanha.data_evento = $("#cfData").value;
+  campanha.local = $("#cfLocal").value; campanha.base_url = $("#cfUrl").value;
+  piscar("#salvoFesta", "salvo"); atualizarPrevia();
+}, 700);
+["#cfNoivos","#cfData","#cfLocal","#cfUrl"].forEach(s => $(s).addEventListener("input", salvarFesta));
+
+const salvarRitmo = debounce(async () => {
+  if(!campanha) return;
+  const ritmo = {
+    teto_diario: +$("#rtTeto").value || 150, hora_inicio: $("#rtInicio").value || "09:00",
+    hora_fim: $("#rtFim").value || "20:30", intervalo_mediano_s: +$("#rtMediana").value || 32,
+    tamanho_lote: +$("#rtLote").value || 18,
+    dia_de_aquecimento: $("#rtAquece").value ? +$("#rtAquece").value : null };
+  await api(`/api/campanhas/${campanha.id}`, {method:"PUT", body: JSON.stringify({ritmo})});
+  piscar("#salvoRitmo", "salvo");
+  campanha = await api(`/api/campanhas/${campanha.id}`);
+  pintarEstimativa(campanha.estimativa);
+}, 700);
+["#rtTeto","#rtInicio","#rtFim","#rtMediana","#rtLote","#rtAquece"]
+  .forEach(s => $(s).addEventListener("input", salvarRitmo));
+
+function piscar(sel, texto){ const el = $(sel); el.textContent = texto; setTimeout(()=>el.textContent="", 1600); }
+
+function pintarEstimativa(e){
+  if(!e) return;
+  const cabe = e.cabe_na_janela
+    ? `Dá para fazer hoje mesmo, em cerca de ${e.duracao_hoje_texto}.`
+    : `Não cabe no horário escolhido. Vai continuar no dia seguinte.`;
+  $("#estimativa").innerHTML = `Até <b>${e.por_dia}</b> envios por dia,
+    <b>${e.dias}</b> ${e.dias>1?"dias":"dia"} para a lista toda. ${cabe}`;
+}
+
+/* ------------------------- mensagens ------------------------- */
+function desenharMensagens(corpos){
+  $("#listaMsg").innerHTML = corpos.map((c,i) => `
+    <div class="msg">
+      <header><span>Versão ${i+1}</span>
+        <button class="apagar" data-i="${i}" title="Remover">remover</button></header>
+      <textarea rows="5" data-msg>${esc(c)}</textarea>
+    </div>`).join("");
+  $("#contaMsg").textContent = `${corpos.length} ${corpos.length>1?"versões":"versão"}`;
+  $("#listaMsg").querySelectorAll("[data-msg]").forEach(t => {
+    t.addEventListener("input", atualizarPrevia);
+    t.addEventListener("focus", () => ultimoFoco = t);
+  });
+  $("#listaMsg").querySelectorAll(".apagar").forEach(b => b.addEventListener("click", () => {
+    const c = lerMensagens(); c.splice(+b.dataset.i, 1);
+    desenharMensagens(c.length ? c : [""]); atualizarPrevia();
+  }));
+}
+const lerMensagens = () => [...document.querySelectorAll("[data-msg]")].map(t => t.value);
+
+$("#fichas").innerHTML = PLACEHOLDERS
+  .map(([p,d]) => `<button class="ficha" data-p="${p}" title="${d}">${p}</button>`).join("")
+  + `<button class="ficha" data-p="{opção A|opção B}" title="sorteia uma das opções">{a|b}</button>`;
+$("#fichas").addEventListener("click", e => {
+  const b = e.target.closest(".ficha"); if(!b) return;
+  const t = ultimoFoco || document.querySelector("[data-msg]"); if(!t) return;
+  const i = t.selectionStart ?? t.value.length;
+  t.value = t.value.slice(0,i) + b.dataset.p + t.value.slice(t.selectionEnd ?? i);
+  t.focus(); t.selectionStart = t.selectionEnd = i + b.dataset.p.length;
+  atualizarPrevia();
+});
+$("#btAddMsg").addEventListener("click", () => {
+  const c = lerMensagens();
+  c.push(EXEMPLOS[c.length % EXEMPLOS.length]);
+  desenharMensagens(c); atualizarPrevia();
+});
+$("#btExemplo").addEventListener("click", () => { desenharMensagens(EXEMPLOS); atualizarPrevia(); });
+$("#btSalvarMsg").addEventListener("click", async () => {
+  try{
+    const r = await api(`/api/campanhas/${campanha.id}/mensagens`,
+      {method:"POST", body: JSON.stringify({corpos: lerMensagens()})});
+    piscar("#contaMsg", `${r.quantidade} salvas`);
+  }catch(e){ alert(e.message); }
+});
+$("#btSortear").addEventListener("click", () => atualizarPrevia(true));
+
+const atualizarPrevia = debounce(async () => {
+  if(!campanha) return;
+  try{
+    const r = await api(`/api/campanhas/${campanha.id}/previa`,
+      {method:"POST", body: JSON.stringify({corpos: lerMensagens(), quantidade: 5})});
+    const d = r.diagnostico;
+    $("#medidor").className = "medidor" + (d ? " " + (d.nivel === "ok" ? "" : d.nivel) : "");
+    $("#medidor").innerHTML = d ? `<b>${d.capacidade}</b>textos diferentes` : "";
+    $("#cartas").innerHTML = r.amostra.map(a => `
+      <div class="carta">
+        <div class="selo"><span>para ${esc(a.nome)}</span><em>${a.fp}</em></div>
+        <p>${esc(a.texto)}</p></div>`).join("");
+    $("#recado").className = "recado" + (d && d.nivel === "erro" ? " erro" : "");
+    $("#recado").textContent = r.erro || (d ? d.recado : "");
+  }catch(e){ $("#recado").textContent = e.message; }
+}, 350);
+
+/* ------------------------- convidados ------------------------- */
+$("#arquivo").addEventListener("change", async e => {
+  const f = e.target.files[0]; if(!f) return;
+  $("#txConvidados").value = await f.text();
+});
+$("#btImportar").addEventListener("click", async () => {
+  try{
+    const r = await api(`/api/campanhas/${campanha.id}/convidados`,
+      {method:"POST", body: JSON.stringify({texto: $("#txConvidados").value})});
+    let html = `<div class="alerta"><b>${r.novos}</b> convidados adicionados.`;
+    if(r.ja_existiam) html += ` ${r.ja_existiam} já estavam na lista.`;
+    if(r.duplicados_no_arquivo) html += ` ${r.duplicados_no_arquivo} linhas repetidas foram unificadas.`;
+    html += `</div>`;
+    if(r.avisos.length) html += `<div class="alerta">Confira estes: ` +
+      r.avisos.map(a => `linha ${a.linha} (${esc(a.motivo)})`).join("; ") + `</div>`;
+    if(r.rejeitados.length) html += `<div class="alerta ruim">Fora da lista:<br>` +
+      r.rejeitados.map(a => `linha ${a.linha}: <code>${esc(a.conteudo)}</code> — ${esc(a.motivo)}`)
+        .join("<br>") + `</div>`;
+    $("#saidaImport").innerHTML = html;
+    $("#txConvidados").value = "";
+    pintarPlacar(r.resumo); await carregarConvidados(); atualizarPrevia();
+  }catch(e){ $("#saidaImport").innerHTML = `<div class="alerta ruim">${esc(e.message)}</div>`; }
+});
+
+async function carregarConvidados(){
+  convidados = await api(`/api/campanhas/${campanha.id}/convidados`);
+  pintarTabela(); pintarTrilha();
+}
+
+document.querySelectorAll("[data-filtro]").forEach(b => b.addEventListener("click", () => {
+  filtro = b.dataset.filtro; pintarTabela();
+}));
+
+function pintarTabela(){
+  const passa = c => filtro === "todos" ? true
+    : filtro === "sim" ? c.resposta === "sim"
+    : filtro === "nao" ? c.resposta === "nao"
+    : filtro === "aguardando" ? (c.status === "enviado" && !c.resposta)
+    : ["invalido","falhou","optout"].includes(c.status);
+  const linhas = convidados.filter(passa);
+  if(!linhas.length){
+    $("#corpoTabela").innerHTML = `<tr><td colspan="5">
+      <div class="vazio"><strong>Nada aqui ainda</strong>
+      ${convidados.length ? "Nenhum convidado neste filtro." : "Importe a lista para começar."}</div></td></tr>`;
+    return;
+  }
+  $("#corpoTabela").innerHTML = linhas.map(c => `
+    <tr>
+      <td>${esc(c.nome) || "<em style='color:#6E7495'>sem nome</em>"}
+        ${c.status !== "pendente" ? `<br><a href="/c/${c.link}" target="_blank"
+          style="font-family:var(--dado);font-size:11px">ver link</a>` : ""}</td>
+      <td class="tel">${esc(c.telefone)}</td>
+      <td><span class="selo-status s-${c.status}">${c.status}</span>
+        ${c.erro ? `<br><span style="font-size:11.5px;color:#6E7495">${esc(c.erro)}</span>` : ""}</td>
+      <td>${c.resposta
+        ? `<span class="selo-status s-${c.resposta}">${c.resposta === "sim" ? "vai" : "não vai"}</span>` +
+          (c.acompanhantes ? `<br><span style="font-family:var(--dado);font-size:11.5px">+${c.acompanhantes}</span>` : "")
+        : `<span style="color:#6E7495">—</span>`}</td>
+      <td style="font-size:12.5px;color:var(--papel-2)">${esc(c.observacao) || ""}</td>
+    </tr>`).join("");
+}
+
+function pintarTrilha(){
+  $("#trilha").innerHTML = convidados.map(c => {
+    const classe = c.resposta === "sim" ? "sim" : c.resposta === "nao" ? "nao"
+      : ["invalido","falhou","optout"].includes(c.status) ? "ruim"
+      : c.status === "enviado" ? "enviado" : "";
+    return `<i class="${classe}" title="${esc(c.nome || c.telefone)}"></i>`;
+  }).join("");
+}
+
+function pintarPlacar(r){
+  if(!r) return;
+  $("#placar").innerHTML = `
+    <div class="sim"><b>${r.confirmados}</b><span>confirmados</span></div>
+    <div class="ouro"><b>${r.pessoas}</b><span>pessoas na festa</span></div>
+    <div class="nao"><b>${r.recusados}</b><span>não vão</span></div>
+    <div><b>${r.aguardando}</b><span>sem resposta</span></div>
+    <div><b>${r.pendentes}</b><span>a enviar</span></div>
+    ${r.invalidos + r.falhas ? `<div class="nao"><b>${r.invalidos + r.falhas}</b><span>com problema</span></div>` : ""}`;
+}
+
+/* ------------------------- disparo ------------------------- */
+$("#cfTransporte").addEventListener("change", e =>
+  $("#camposCloud").classList.toggle("oculto", e.target.value !== "cloud_api"));
+
+function configTransporte(){
+  const tipo = $("#cfTransporte").value;
+  if(tipo === "cloud_api") return {tipo, phone_number_id:$("#apiId").value,
+    token:$("#apiToken").value, template:$("#apiTpl").value};
+  return {tipo};
+}
+
+$("#btIniciar").addEventListener("click", async () => {
+  const tipo = $("#cfTransporte").value;
+  if(tipo !== "simulado"){
+    const r = campanha.resumo;
+    if(!confirm(`Vai enviar mensagem de verdade para ${r.pendentes} pessoas. Confirma?`)) return;
+  }
+  try{
+    await api(`/api/campanhas/${campanha.id}/iniciar`,
+      {method:"POST", body: JSON.stringify({transporte: configTransporte()})});
+    atualizarSituacao();
+  }catch(e){ alert(e.message); }
+});
+$("#btPausar").addEventListener("click", () => api(`/api/campanhas/${campanha.id}/pausar`, {method:"POST"}).then(atualizarSituacao));
+$("#btRetomar").addEventListener("click", () => api(`/api/campanhas/${campanha.id}/retomar`, {method:"POST"}).then(atualizarSituacao));
+$("#btParar").addEventListener("click", () => {
+  if(confirm("Parar o envio? Os pendentes ficam salvos e você retoma depois."))
+    api(`/api/campanhas/${campanha.id}/parar`, {method:"POST"}).then(atualizarSituacao);
+});
+
+function pintarEstado(estado, atual){
+  $("#estadoEnvio").textContent = estado;
+  const enviando = estado === "enviando" || estado === "preparando";
+  $("#btIniciar").classList.toggle("oculto", enviando || estado === "pausada");
+  $("#btPausar").classList.toggle("oculto", !enviando);
+  $("#btRetomar").classList.toggle("oculto", estado !== "pausada");
+  $("#btParar").classList.toggle("oculto", !(enviando || estado === "pausada"));
+  $("#agora").textContent = atual
+    ? `${atual.indice} de ${atual.total} — ${atual.nome || atual.telefone}`
+    : (estado === "preparando" ? "Conectando..." : "");
+}
+
+async function atualizarSituacao(){
+  const s = await api(`/api/campanhas/${campanha.id}/situacao`);
+  pintarEstado(s.estado, s.atual);
+  pintarPlacar(s.resumo);
+  $("#log").innerHTML = s.eventos.map(linhaLog).join("");
+  $("#log").scrollTop = $("#log").scrollHeight;
+}
+
+const linhaLog = e => `<div><time>${(e.quando || "").slice(11,16)}</time>
+  <span class="${e.nivel}">${esc(e.texto)}</span></div>`;
+
+function ligarStream(id){
+  if(fonte) fonte.close();
+  fonte = new EventSource(`/api/campanhas/${id}/stream`);
+  fonte.onmessage = ev => {
+    const e = JSON.parse(ev.data);
+    $("#log").insertAdjacentHTML("beforeend", linhaLog(e));
+    $("#log").scrollTop = $("#log").scrollHeight;
+    if(e.resumo) pintarPlacar(e.resumo);
+    if(e.estado) pintarEstado(e.estado, null);
+    if(e.convidado) agendarRecarga();
+  };
+}
+const agendarRecarga = debounce(carregarConvidados, 1200);
+setInterval(() => { if(campanha) atualizarSituacao().catch(()=>{}); }, 15000);
+
+carregarCampanhas().catch(e => alert(e.message));
+</script>
+</body>
+</html>

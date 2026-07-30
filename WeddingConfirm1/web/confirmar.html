@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confirmar presença</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tinta:#14172A; --papel:#E9E6DC; --papel-2:#DDD8CB;
+  --suave:#6A6754; --ouro:#A8813A; --hortela:#2F7A57; --rosa:#A6485C;
+  --display:"Fraunces",Georgia,serif;
+  --corpo:"Archivo","Helvetica Neue",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;background:var(--papel);color:var(--tinta);
+  font-family:var(--corpo);font-size:16px;line-height:1.55;
+  display:flex;align-items:center;justify-content:center;padding:28px 20px;
+  background-image:radial-gradient(circle at 18% 12%,#EFECE3 0,transparent 42%),
+                   radial-gradient(circle at 84% 88%,#E3E0D4 0,transparent 46%);
+}
+main{width:100%;max-width:430px}
+:focus-visible{outline:2px solid var(--ouro);outline-offset:3px}
+
+.olho{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--suave)}
+h1{
+  font-family:var(--display);font-weight:300;font-variation-settings:"SOFT" 70,"WONK" 1;
+  font-size:clamp(34px,10vw,46px);line-height:1.02;letter-spacing:-.02em;margin:.35em 0 .5em;
+}
+.detalhes{border-top:1px solid #CFCABA;border-bottom:1px solid #CFCABA;
+  padding:14px 0;margin:22px 0 26px;font-size:15px}
+.detalhes div{display:flex;gap:14px;padding:3px 0}
+.detalhes dt{flex:0 0 62px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--suave);padding-top:4px}
+.detalhes dd{margin:0;font-family:var(--display);font-size:19px;font-weight:400;
+  font-variation-settings:"SOFT" 60}
+.pergunta{font-family:var(--display);font-size:23px;font-weight:400;
+  font-variation-settings:"SOFT" 60,"WONK" 1;margin:0 0 16px}
+
+.escolha{display:grid;gap:10px}
+.escolha button{
+  font-family:var(--corpo);font-size:16.5px;font-weight:500;cursor:pointer;
+  background:none;border:1px solid var(--tinta);color:var(--tinta);
+  border-radius:2px;padding:15px 18px;text-align:left;transition:background .18s,color .18s;
+}
+.escolha button:hover{background:var(--tinta);color:var(--papel)}
+.escolha button.sim[aria-pressed=true]{background:var(--hortela);border-color:var(--hortela);color:#fff}
+.escolha button.nao[aria-pressed=true]{background:var(--rosa);border-color:var(--rosa);color:#fff}
+.escolha small{display:block;font-weight:400;font-size:13px;opacity:.7;margin-top:2px}
+
+.extra{margin-top:20px}
+label{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--suave);margin:16px 0 6px}
+input,textarea,select{
+  width:100%;font-family:inherit;font-size:16px;background:#F2EFE7;
+  border:1px solid #CFCABA;border-radius:2px;padding:11px 12px;color:var(--tinta);
+}
+textarea{resize:vertical}
+.enviar{width:100%;margin-top:22px;background:var(--tinta);color:var(--papel);
+  border:0;border-radius:2px;padding:15px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.enviar:disabled{opacity:.35;cursor:not-allowed}
+.rodape{margin-top:22px;font-size:12.5px;color:var(--suave)}
+.rodape a{color:var(--suave)}
+
+/* selo de confirmação: o momento de recompensa */
+.selo{text-align:center;padding:8px 0 4px}
+.selo svg{width:132px;height:132px;animation:lacrar .55s cubic-bezier(.2,.9,.3,1.2) both}
+.selo h2{font-family:var(--display);font-weight:400;font-size:26px;
+  font-variation-settings:"SOFT" 60,"WONK" 1;margin:14px 0 6px}
+.selo p{margin:0;color:var(--suave);font-size:14.5px}
+@keyframes lacrar{from{transform:scale(.6) rotate(-14deg);opacity:0}to{transform:none;opacity:1}}
+.oculto{display:none!important}
+@media (prefers-reduced-motion:reduce){.selo svg{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <div id="formulario" class="oculto">
+    <span class="olho" id="olho">Confirmação de presença</span>
+    <h1 id="titulo"></h1>
+    <dl class="detalhes" id="detalhes"></dl>
+
+    <p class="pergunta" id="pergunta"></p>
+    <div class="escolha">
+      <button class="sim" id="btSim" aria-pressed="false">Vou estar lá
+        <small>Conta comigo</small></button>
+      <button class="nao" id="btNao" aria-pressed="false">Não vou conseguir
+        <small>Infelizmente dessa vez não dá</small></button>
+    </div>
+
+    <div class="extra oculto" id="extra">
+      <label for="acomp">Quantas pessoas vão com você</label>
+      <select id="acomp">
+        <option value="0">Só eu</option><option value="1">Eu + 1</option>
+        <option value="2">Eu + 2</option><option value="3">Eu + 3</option>
+        <option value="4">Eu + 4</option>
+      </select>
+    </div>
+    <div class="extra oculto" id="extraObs">
+      <label for="obs">Quer deixar um recado? (opcional)</label>
+      <textarea id="obs" rows="3" placeholder="Restrição alimentar, um abraço, o que quiser"></textarea>
+    </div>
+
+    <button class="enviar" id="btEnviar" disabled>Enviar resposta</button>
+    <p class="rodape">Este link é só seu. Pode voltar e mudar a resposta quando quiser.<br>
+      <a href="#" id="btSair">Não quero mais receber mensagens</a></p>
+  </div>
+
+  <div id="pronto" class="selo oculto"></div>
+</main>
+
+<script>
+const token = location.pathname.split("/")[2];
+const $ = s => document.querySelector(s);
+const esc = t => (t ?? "").toString().replace(/[<>&]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+let escolha = null, dados = null;
+
+const SELO = cor => `<svg viewBox="0 0 120 120" role="img" aria-label="Resposta registrada">
+  <circle cx="60" cy="60" r="52" fill="none" stroke="${cor}" stroke-width="1.5"/>
+  <circle cx="60" cy="60" r="45" fill="none" stroke="${cor}" stroke-width="4" stroke-dasharray="2 5"/>
+  <path d="M42 61l12 12 24-26" fill="none" stroke="${cor}" stroke-width="5"
+        stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const SELO_NAO = cor => `<svg viewBox="0 0 120 120" role="img" aria-label="Resposta registrada">
+  <circle cx="60" cy="60" r="52" fill="none" stroke="${cor}" stroke-width="1.5"/>
+  <circle cx="60" cy="60" r="45" fill="none" stroke="${cor}" stroke-width="4" stroke-dasharray="2 5"/>
+  <path d="M45 60h30" fill="none" stroke="${cor}" stroke-width="5" stroke-linecap="round"/></svg>`;
+
+async function carregar(){
+  const r = await fetch(`/api/c/${token}`);
+  if(!r.ok){ document.body.innerHTML = "<main><h1>Link não encontrado</h1></main>"; return; }
+  dados = await r.json();
+
+  if(new URLSearchParams(location.search).get("saiu")){
+    return concluir("saiu");
+  }
+
+  $("#titulo").innerHTML = dados.primeiro_nome
+    ? `${esc(dados.primeiro_nome)},<br>você é nosso convidado`
+    : "Você é nosso convidado";
+  $("#pergunta").textContent = dados.noivos
+    ? `Você vem ao casamento ${prep(dados.noivos)}?`
+    : "Você vem ao casamento?";
+  const itens = [
+    ["Noivos", dados.noivos], ["Data", dados.data_evento], ["Local", dados.local],
+  ].filter(([, v]) => v);
+  $("#detalhes").innerHTML = itens.map(([k,v]) =>
+    `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("");
+  if(!itens.length) $("#detalhes").remove();
+
+  if(dados.resposta){
+    marcar(dados.resposta);
+    $("#acomp").value = dados.acompanhantes || 0;
+    $("#obs").value = dados.observacao || "";
+    $("#olho").textContent = "Você já respondeu — pode mudar";
+  }
+  $("#formulario").classList.remove("oculto");
+}
+const prep = n => `de ${n}`;
+
+function marcar(valor){
+  escolha = valor;
+  $("#btSim").setAttribute("aria-pressed", valor === "sim");
+  $("#btNao").setAttribute("aria-pressed", valor === "nao");
+  $("#extra").classList.toggle("oculto", valor !== "sim");
+  $("#extraObs").classList.remove("oculto");
+  $("#btEnviar").disabled = false;
+}
+$("#btSim").addEventListener("click", () => marcar("sim"));
+$("#btNao").addEventListener("click", () => marcar("nao"));
+
+$("#btEnviar").addEventListener("click", async () => {
+  $("#btEnviar").disabled = true;
+  $("#btEnviar").textContent = "Enviando...";
+  const r = await fetch(`/api/c/${token}`, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({resposta: escolha, acompanhantes: +$("#acomp").value || 0,
+                          observacao: $("#obs").value})});
+  if(!r.ok){
+    $("#btEnviar").disabled = false;
+    $("#btEnviar").textContent = "Tentar de novo";
+    return;
+  }
+  concluir(escolha);
+});
+
+$("#btSair").addEventListener("click", e => {
+  e.preventDefault();
+  if(confirm("Você deixa de receber mensagens sobre o casamento. Confirma?"))
+    location.href = `/c/${token}/sair`;
+});
+
+function concluir(tipo){
+  $("#formulario").classList.add("oculto");
+  const alvo = $("#pronto");
+  const pessoas = 1 + (+$("#acomp").value || 0);
+  if(tipo === "sim"){
+    alvo.innerHTML = SELO("#2F7A57") +
+      `<h2>Confirmado</h2><p>${pessoas > 1
+        ? `Anotamos ${pessoas} lugares para você.`
+        : "Anotamos seu lugar."} Até lá!</p>`;
+  }else if(tipo === "nao"){
+    alvo.innerHTML = SELO_NAO("#A6485C") +
+      `<h2>Anotado</h2><p>Que pena. Obrigado por avisar — assim a gente organiza direito.</p>`;
+  }else{
+    alvo.innerHTML = SELO_NAO("#6A6754") +
+      `<h2>Tudo bem</h2><p>Você não vai mais receber mensagens sobre o casamento.</p>`;
+  }
+  alvo.classList.remove("oculto");
+}
+
+carregar();
+</script>
+</body>
+</html>

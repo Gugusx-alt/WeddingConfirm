@@ -1,0 +1,6 @@
+# Painel web
+fastapi>=0.110
+uvicorn[standard]>=0.29
+
+# Transporte WhatsApp Web (opcional: só se for usar --transporte whatsapp_web)
+selenium>=4.20

@@ -1,0 +1,15 @@
+{Oi|Olá|Oiê}, {primeiro_nome}! {Tudo bem|Tudo certo|Como você está}?
+{Estamos|Ficamos} {muito felizes|super animados} de {te convidar|convidar você} para o nosso casamento, dia {data}.
+{Confirma sua presença|Dá pra confirmar} {aqui|neste link}: {link}
+---
+{primeiro_nome}, {que bom te falar|passando pra te contar}! O casamento de {noivos} {está chegando|é logo}: {data}, em {local}.
+{A gente ia amar|Seria muito bom} {ter você lá|te ver lá}.
+{Confirma|Responde} por aqui, {é rapidinho|leva um minuto}: {link}
+---
+{saudacao}, {primeiro_nome}! {Aqui é sobre|Sobre} o casamento de {noivos}, dia {data}.
+{Precisamos|A gente precisa} {saber|fechar} quem vem, {pro buffet|pra organizar as mesas}.
+{Toca aqui|É neste link}: {link}
+---
+{primeiro_nome}, {tudo bom|tudo certo}? {Chegou a hora|Está chegando}: {noivos} {se casam|casam} em {data}.
+{Você está na nossa lista|Seu nome está na lista} desde {o começo|o primeiro dia}.
+{Só falta|Falta} {você confirmar|sua confirmação}: {link}

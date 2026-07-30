@@ -370,5 +370,6 @@ def erro_json(request: Request, exc: HTTPException):
 if __name__ == "__main__":
     import uvicorn
     porta = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "127.0.0.1")
     print(f"\n  WeddingConfirm em http://localhost:{porta}\n")
-    uvicorn.run(app, host="127.0.0.1", port=porta, log_level="warning")
+    uvicorn.run(app, host=host, port=porta, log_level="warning")

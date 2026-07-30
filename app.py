@@ -20,6 +20,7 @@ import os
 import secrets
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
@@ -35,6 +36,8 @@ from core.db import Banco
 from core.executor import Executor, ritmo_de_dict
 from core.transportes import montar_transporte
 from core.variacoes import ContextoCampanha, SeletorDeVariacoes
+
+load_dotenv()  # lê .env na raiz do projeto, se existir (nunca versionado)
 
 AQUI = Path(__file__).parent
 WEB = AQUI / "web"

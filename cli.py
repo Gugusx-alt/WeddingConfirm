@@ -24,12 +24,16 @@ import sys
 import time
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from core.contatos import importar
 from core.db import Banco
 from core.executor import Executor
 from core.limites import Ritmo
 from core.transportes import montar_transporte
 from core.variacoes import ContextoCampanha, SeletorDeVariacoes, separar_templates
+
+load_dotenv()
 
 
 def argumentos(argv: list[str]) -> argparse.Namespace:

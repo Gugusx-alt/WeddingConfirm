@@ -19,6 +19,7 @@ acompanhar no navegador.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -50,7 +51,8 @@ def argumentos(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--inicio", default="09:00")
     p.add_argument("--fim", default="20:30")
     p.add_argument("--perfil", default="./.wa_profile")
-    p.add_argument("--banco", default="weddingconfirm.db")
+    p.add_argument("--banco", default=os.environ.get(
+        "DATABASE_URL", "postgresql://weddingconfirm:weddingconfirm_dev@localhost/weddingconfirm"))
     p.add_argument("--api-id", default="")
     p.add_argument("--api-token", default="")
     p.add_argument("--api-template", default="")

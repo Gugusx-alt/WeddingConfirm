@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chromium --headless --disable-gpu --no-sandbox --window-size=1440,1100 --screenshot=/tmp/claude-1000/-home-gustavo-Projetos-WeddingConfirm/af20ad97-79a2-4119-bd14-59ec0ea2712b/scratchpad/painel2.png http://localhost:8000/)",
+      "Bash(chromium --headless --disable-gpu --no-sandbox --window-size=430,900 --screenshot=/tmp/claude-1000/-home-gustavo-Projetos-WeddingConfirm/af20ad97-79a2-4119-bd14-59ec0ea2712b/scratchpad/confirmar.png \"http://localhost:8000/c/Gr-tJ6N-aAPc\")"
+    ]
+  }
+}

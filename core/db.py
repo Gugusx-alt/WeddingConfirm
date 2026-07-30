@@ -1,5 +1,5 @@
 """
-Persistência em SQLite.
+Persistência em PostgreSQL.
 
 O motivo de existir: a versão original guardava o progresso em variáveis de
 memória. Se o Chrome caísse no convidado 90 de 200, não havia como retomar sem
@@ -14,18 +14,19 @@ from __future__ import annotations
 
 import json
 import secrets
-import sqlite3
 from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import datetime, time
-from pathlib import Path
 from typing import Iterator
+
+import psycopg
+from psycopg.rows import dict_row
 
 from .variacoes import Convidado
 
 ESQUEMA = """
 CREATE TABLE IF NOT EXISTS campanhas (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    id            SERIAL PRIMARY KEY,
     nome          TEXT NOT NULL,
     noivos        TEXT DEFAULT '',
     data_evento   TEXT DEFAULT '',
@@ -38,14 +39,14 @@ CREATE TABLE IF NOT EXISTS campanhas (
 );
 
 CREATE TABLE IF NOT EXISTS templates (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          SERIAL PRIMARY KEY,
     campanha_id INTEGER NOT NULL REFERENCES campanhas(id) ON DELETE CASCADE,
     corpo       TEXT NOT NULL,
     ordem       INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS convidados (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    id           SERIAL PRIMARY KEY,
     campanha_id  INTEGER NOT NULL REFERENCES campanhas(id) ON DELETE CASCADE,
     telefone     TEXT NOT NULL,
     nome         TEXT,
@@ -69,7 +70,7 @@ CREATE TABLE IF NOT EXISTS respostas (
 );
 
 CREATE TABLE IF NOT EXISTS eventos (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          SERIAL PRIMARY KEY,
     campanha_id INTEGER NOT NULL,
     quando      TEXT NOT NULL,
     nivel       TEXT NOT NULL,               -- info|ok|aviso|erro
@@ -82,17 +83,14 @@ CREATE INDEX IF NOT EXISTS idx_ev_camp ON eventos(campanha_id, id);
 
 
 class Banco:
-    def __init__(self, caminho: str | Path = "weddingconfirm.db") -> None:
-        self.caminho = str(caminho)
+    def __init__(self, dsn: str) -> None:
+        self.dsn = dsn
         with self.conexao() as con:
-            con.executescript(ESQUEMA)
+            con.execute(ESQUEMA)
 
     @contextmanager
-    def conexao(self) -> Iterator[sqlite3.Connection]:
-        con = sqlite3.connect(self.caminho, timeout=30)
-        con.row_factory = sqlite3.Row
-        con.execute("PRAGMA foreign_keys = ON")
-        con.execute("PRAGMA journal_mode = WAL")
+    def conexao(self) -> Iterator[psycopg.Connection]:
+        con = psycopg.connect(self.dsn, row_factory=dict_row)
         try:
             yield con
             con.commit()
@@ -106,7 +104,7 @@ class Banco:
             cur = con.execute(
                 """INSERT INTO campanhas (nome, noivos, data_evento, local, base_url,
                                           ddi, ritmo, criada_em)
-                   VALUES (?,?,?,?,?,?,?,?)""",
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
                 (
                     nome,
                     campos.get("noivos", ""),
@@ -118,7 +116,7 @@ class Banco:
                     datetime.now().isoformat(timespec="seconds"),
                 ),
             )
-            return int(cur.lastrowid)
+            return int(cur.fetchone()["id"])
 
     def atualizar_campanha(self, campanha_id: int, **campos) -> None:
         if not campos:
@@ -128,16 +126,18 @@ class Banco:
         campos = {k: v for k, v in campos.items() if k in permitidos}
         if "ritmo" in campos and not isinstance(campos["ritmo"], str):
             campos["ritmo"] = json.dumps(_ritmo_json(campos["ritmo"]))
-        sets = ", ".join(f"{k} = ?" for k in campos)
+        sets = ", ".join(f"{k} = %s" for k in campos)
         with self.conexao() as con:
             con.execute(
-                f"UPDATE campanhas SET {sets} WHERE id = ?",
+                f"UPDATE campanhas SET {sets} WHERE id = %s",
                 (*campos.values(), campanha_id),
             )
 
     def campanha(self, campanha_id: int) -> dict | None:
         with self.conexao() as con:
-            row = con.execute("SELECT * FROM campanhas WHERE id = ?", (campanha_id,)).fetchone()
+            row = con.execute(
+                "SELECT * FROM campanhas WHERE id = %s", (campanha_id,)
+            ).fetchone()
         return dict(row) if row else None
 
     def campanhas(self) -> list[dict]:
@@ -151,16 +151,16 @@ class Banco:
 
     def salvar_templates(self, campanha_id: int, corpos: list[str]) -> None:
         with self.conexao() as con:
-            con.execute("DELETE FROM templates WHERE campanha_id = ?", (campanha_id,))
-            con.executemany(
-                "INSERT INTO templates (campanha_id, corpo, ordem) VALUES (?,?,?)",
+            con.execute("DELETE FROM templates WHERE campanha_id = %s", (campanha_id,))
+            con.cursor().executemany(
+                "INSERT INTO templates (campanha_id, corpo, ordem) VALUES (%s,%s,%s)",
                 [(campanha_id, c.strip(), i) for i, c in enumerate(corpos) if c.strip()],
             )
 
     def templates(self, campanha_id: int) -> list[str]:
         with self.conexao() as con:
             rows = con.execute(
-                "SELECT corpo FROM templates WHERE campanha_id = ? ORDER BY ordem",
+                "SELECT corpo FROM templates WHERE campanha_id = %s ORDER BY ordem",
                 (campanha_id,),
             ).fetchall()
         return [r["corpo"] for r in rows]
@@ -171,27 +171,23 @@ class Banco:
         novos = 0
         with self.conexao() as con:
             for c in convidados:
-                try:
-                    con.execute(
-                        """INSERT INTO convidados (campanha_id, telefone, nome, token)
-                           VALUES (?,?,?,?)""",
-                        (campanha_id, c.telefone, c.nome, secrets.token_urlsafe(9)),
-                    )
+                row = con.execute(
+                    """INSERT INTO convidados (campanha_id, telefone, nome, token)
+                       VALUES (%s,%s,%s,%s)
+                       ON CONFLICT (campanha_id, telefone) DO UPDATE
+                           SET nome = COALESCE(NULLIF(convidados.nome,''), EXCLUDED.nome)
+                       RETURNING (xmax = 0) AS inserido""",
+                    (campanha_id, c.telefone, c.nome, secrets.token_urlsafe(9)),
+                ).fetchone()
+                if row["inserido"]:
                     novos += 1
-                except sqlite3.IntegrityError:
-                    # Já existe: atualiza o nome se antes estava vazio.
-                    con.execute(
-                        """UPDATE convidados SET nome = COALESCE(NULLIF(nome,''), ?)
-                           WHERE campanha_id = ? AND telefone = ?""",
-                        (c.nome, campanha_id, c.telefone),
-                    )
         return novos
 
     def pendentes(self, campanha_id: int) -> list[Convidado]:
         with self.conexao() as con:
             rows = con.execute(
                 """SELECT id, telefone, nome, token FROM convidados
-                   WHERE campanha_id = ? AND status IN ('pendente','falhou')
+                   WHERE campanha_id = %s AND status IN ('pendente','falhou')
                    ORDER BY id""",
                 (campanha_id,),
             ).fetchall()
@@ -211,11 +207,11 @@ class Banco:
         with self.conexao() as con:
             con.execute(
                 """UPDATE convidados
-                      SET status = ?, mensagem = COALESCE(?, mensagem),
-                          fp = COALESCE(?, fp), erro = ?,
+                      SET status = %s, mensagem = COALESCE(%s, mensagem),
+                          fp = COALESCE(%s, fp), erro = %s,
                           tentativas = tentativas + 1,
-                          enviado_em = CASE WHEN ?='enviado' THEN ? ELSE enviado_em END
-                    WHERE id = ?""",
+                          enviado_em = CASE WHEN %s='enviado' THEN %s ELSE enviado_em END
+                    WHERE id = %s""",
                 (status, mensagem, fp, erro, status,
                  datetime.now().isoformat(timespec="seconds"), convidado_id),
             )
@@ -226,7 +222,7 @@ class Banco:
                 """SELECT c.*, r.resposta, r.acompanhantes, r.observacao, r.respondido_em
                      FROM convidados c
                      LEFT JOIN respostas r ON r.convidado_id = c.id
-                    WHERE c.campanha_id = ?
+                    WHERE c.campanha_id = %s
                     ORDER BY c.nome IS NULL, c.nome, c.id""",
                 (campanha_id,),
             ).fetchall()
@@ -240,7 +236,7 @@ class Banco:
                      FROM convidados c
                      JOIN campanhas ca ON ca.id = c.campanha_id
                      LEFT JOIN respostas r ON r.convidado_id = c.id
-                    WHERE c.token = ?""",
+                    WHERE c.token = %s""",
                 (token,),
             ).fetchone()
         return dict(row) if row else None
@@ -254,12 +250,12 @@ class Banco:
             con.execute(
                 """INSERT INTO respostas (convidado_id, resposta, acompanhantes,
                                           observacao, respondido_em)
-                   VALUES (?,?,?,?,?)
+                   VALUES (%s,%s,%s,%s,%s)
                    ON CONFLICT(convidado_id) DO UPDATE SET
-                       resposta = excluded.resposta,
-                       acompanhantes = excluded.acompanhantes,
-                       observacao = excluded.observacao,
-                       respondido_em = excluded.respondido_em""",
+                       resposta = EXCLUDED.resposta,
+                       acompanhantes = EXCLUDED.acompanhantes,
+                       observacao = EXCLUDED.observacao,
+                       respondido_em = EXCLUDED.respondido_em""",
                 (convidado_id, resposta, max(0, int(acompanhantes)), observacao.strip()[:500],
                  datetime.now().isoformat(timespec="seconds")),
             )
@@ -267,7 +263,7 @@ class Banco:
     def marcar_optout(self, convidado_id: int) -> None:
         with self.conexao() as con:
             con.execute(
-                "UPDATE convidados SET status = 'optout' WHERE id = ?", (convidado_id,)
+                "UPDATE convidados SET status = 'optout' WHERE id = %s", (convidado_id,)
             )
 
     # -- resumo e log ------------------------------------------------------ #
@@ -277,34 +273,34 @@ class Banco:
             envio = dict(
                 con.execute(
                     """SELECT
-                         COUNT(*)                                        AS total,
-                         SUM(status='pendente')                          AS pendentes,
-                         SUM(status='enviado')                           AS enviados,
-                         SUM(status='invalido')                          AS invalidos,
-                         SUM(status='falhou')                            AS falhas,
-                         SUM(status='optout')                            AS optout
-                       FROM convidados WHERE campanha_id = ?""",
+                         COUNT(*)                                          AS total,
+                         COUNT(*) FILTER (WHERE status='pendente')         AS pendentes,
+                         COUNT(*) FILTER (WHERE status='enviado')          AS enviados,
+                         COUNT(*) FILTER (WHERE status='invalido')         AS invalidos,
+                         COUNT(*) FILTER (WHERE status='falhou')           AS falhas,
+                         COUNT(*) FILTER (WHERE status='optout')           AS optout
+                       FROM convidados WHERE campanha_id = %s""",
                     (campanha_id,),
                 ).fetchone()
             )
             rsvp = dict(
                 con.execute(
                     """SELECT
-                         SUM(r.resposta='sim')                    AS confirmados,
-                         SUM(r.resposta='nao')                    AS recusados,
+                         COUNT(*) FILTER (WHERE r.resposta='sim')          AS confirmados,
+                         COUNT(*) FILTER (WHERE r.resposta='nao')          AS recusados,
                          COALESCE(SUM(CASE WHEN r.resposta='sim'
                                            THEN 1 + r.acompanhantes END), 0) AS pessoas
                        FROM respostas r
                        JOIN convidados c ON c.id = r.convidado_id
-                      WHERE c.campanha_id = ?""",
+                      WHERE c.campanha_id = %s""",
                     (campanha_id,),
                 ).fetchone()
             )
             repetidas = con.execute(
                 """SELECT COUNT(*) AS n FROM (
                        SELECT fp FROM convidados
-                        WHERE campanha_id = ? AND fp IS NOT NULL
-                        GROUP BY fp HAVING COUNT(*) > 1)""",
+                        WHERE campanha_id = %s AND fp IS NOT NULL
+                        GROUP BY fp HAVING COUNT(*) > 1) sub""",
                 (campanha_id,),
             ).fetchone()["n"]
         envio = {k: (v or 0) for k, v in envio.items()}
@@ -321,7 +317,7 @@ class Banco:
         }
         with self.conexao() as con:
             con.execute(
-                "INSERT INTO eventos (campanha_id, quando, nivel, texto) VALUES (?,?,?,?)",
+                "INSERT INTO eventos (campanha_id, quando, nivel, texto) VALUES (%s,%s,%s,%s)",
                 (campanha_id, registro["quando"], nivel, texto),
             )
         return registro
@@ -330,7 +326,7 @@ class Banco:
         with self.conexao() as con:
             rows = con.execute(
                 """SELECT quando, nivel, texto FROM eventos
-                    WHERE campanha_id = ? ORDER BY id DESC LIMIT ?""",
+                    WHERE campanha_id = %s ORDER BY id DESC LIMIT %s""",
                 (campanha_id, limite),
             ).fetchall()
         return [dict(r) for r in rows][::-1]
@@ -340,8 +336,8 @@ class Banco:
         with self.conexao() as con:
             return con.execute(
                 """SELECT COUNT(*) AS n FROM convidados
-                    WHERE campanha_id = ? AND status = 'enviado'
-                      AND substr(enviado_em, 1, 10) = ?""",
+                    WHERE campanha_id = %s AND status = 'enviado'
+                      AND substr(enviado_em, 1, 10) = %s""",
                 (campanha_id, hoje),
             ).fetchone()["n"]
 

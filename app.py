@@ -36,9 +36,10 @@ from core.variacoes import ContextoCampanha, SeletorDeVariacoes
 
 AQUI = Path(__file__).parent
 WEB = AQUI / "web"
+DSN_PADRAO = "postgresql://weddingconfirm:weddingconfirm_dev@localhost/weddingconfirm"
 
 app = FastAPI(title="WeddingConfirm", docs_url=None, redoc_url=None)
-banco = Banco(os.environ.get("WC_DB", AQUI / "weddingconfirm.db"))
+banco = Banco(os.environ.get("DATABASE_URL", DSN_PADRAO))
 executor = Executor(banco)
 
 

@@ -23,8 +23,9 @@ body{
   background-image:radial-gradient(circle at 18% 12%,#EFECE3 0,transparent 42%),
                    radial-gradient(circle at 84% 88%,#E3E0D4 0,transparent 46%);
 }
-main{width:100%;max-width:430px}
+main{width:100%;max-width:430px;animation:surgir .35s ease both}
 :focus-visible{outline:2px solid var(--ouro);outline-offset:3px}
+@keyframes surgir{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 .olho{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--suave)}
 h1{
@@ -45,24 +46,29 @@ h1{
 .escolha button{
   font-family:var(--corpo);font-size:16.5px;font-weight:500;cursor:pointer;
   background:none;border:1px solid var(--tinta);color:var(--tinta);
-  border-radius:2px;padding:15px 18px;text-align:left;transition:background .18s,color .18s;
+  border-radius:2px;padding:15px 18px;text-align:left;transition:background .18s,color .18s,transform .1s;
 }
 .escolha button:hover{background:var(--tinta);color:var(--papel)}
+.escolha button:active{transform:scale(.98)}
 .escolha button.sim[aria-pressed=true]{background:var(--hortela);border-color:var(--hortela);color:#fff}
 .escolha button.nao[aria-pressed=true]{background:var(--rosa);border-color:var(--rosa);color:#fff}
 .escolha small{display:block;font-weight:400;font-size:13px;opacity:.7;margin-top:2px}
 
-.extra{margin-top:20px}
+.extra{margin-top:20px;animation:surgir .25s ease both}
 label{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--suave);margin:16px 0 6px}
 input,textarea,select{
   width:100%;font-family:inherit;font-size:16px;background:#F2EFE7;
   border:1px solid #CFCABA;border-radius:2px;padding:11px 12px;color:var(--tinta);
+  transition:border-color .15s;
 }
 textarea{resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:var(--ouro)}
 .enviar{width:100%;margin-top:22px;background:var(--tinta);color:var(--papel);
-  border:0;border-radius:2px;padding:15px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer}
+  border:0;border-radius:2px;padding:15px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;
+  transition:transform .1s,opacity .15s;}
 .enviar:disabled{opacity:.35;cursor:not-allowed}
+.enviar:not(:disabled):active{transform:scale(.98)}
 .rodape{margin-top:22px;font-size:12.5px;color:var(--suave)}
 .rodape a{color:var(--suave)}
 

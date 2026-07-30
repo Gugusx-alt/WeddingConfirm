@@ -35,7 +35,7 @@ O `.gitignore` deste pacote já bloqueia a pasta, o banco e as listas reais.
 | A cada ~10 mensagens tem que trocar o texto, senão o WhatsApp bloqueia | Motor de variação com spintax. Você escreve 4 versões, o sistema gera centenas de textos distintos e garante que nada se repita numa janela de 25 envios |
 | Sem interface visual | Painel web em `/`: escrever mensagens com prévia ao vivo, importar lista, ajustar ritmo, disparar, acompanhar em tempo real |
 | Confirmação não era automatizada | Cada convidado recebe um link só dele. Ele responde numa página, e o painel soma confirmados, recusas e total de pessoas na festa. Ninguém precisa ler resposta no WhatsApp |
-| Progresso só na memória | Tudo em SQLite. Se o Chrome cair no convidado 90 de 200, você retoma do 91 sem reenviar para ninguém |
+| Progresso só na memória | Tudo em PostgreSQL. Se o Chrome cair no convidado 90 de 200, você retoma do 91 sem reenviar para ninguém |
 | Só variar o texto não evita bloqueio | Controle de ritmo: intervalo irregular, pausa entre lotes, janela de horário, teto diário e curva de aquecimento |
 | DDI/nono dígito | Normalização corrigida; erro aparece na importação, não no meio do disparo |
 
@@ -43,10 +43,28 @@ O `.gitignore` deste pacote já bloqueia a pasta, o banco e as listas reais.
 
 ## Instalar e rodar
 
+Requer um PostgreSQL rodando localmente (`pacman -S postgresql` no Arch, depois
+`initdb`, `systemctl enable --now postgresql` e criar um banco/usuário para o
+projeto — veja abaixo).
+
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
+```
+
+Por padrão conecta em `postgresql://weddingconfirm:weddingconfirm_dev@localhost/weddingconfirm`.
+Para usar outro banco, exporte `DATABASE_URL` antes de rodar:
+
+```bash
+export DATABASE_URL="postgresql://usuario:senha@host/banco"
+```
+
+Criando o banco local pela primeira vez:
+
+```sql
+CREATE ROLE weddingconfirm WITH LOGIN PASSWORD 'weddingconfirm_dev';
+CREATE DATABASE weddingconfirm OWNER weddingconfirm;
 ```
 
 Abre em <http://localhost:8000>.
@@ -168,7 +186,7 @@ core/
   limites.py           ritmo: intervalos, lotes, horário, teto, aquecimento
   transportes.py       WhatsApp Web (Selenium), Cloud API, simulado
   executor.py          roda a campanha em thread, com pausar/retomar
-  db.py                SQLite
+  db.py                PostgreSQL
 web/
   painel.html          painel dos noivos
   confirmar.html       página que o convidado abre

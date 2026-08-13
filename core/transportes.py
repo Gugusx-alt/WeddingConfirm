@@ -245,7 +245,7 @@ class TransporteWhatsAppWeb:
             return Resultado("invalido", "número não está no WhatsApp")
 
         try:
-            campo.click()
+            self._clicar_campo(campo)
             self._digitar(campo, texto, deve_parar)
         except EnvioCancelado:
             raise
@@ -272,6 +272,57 @@ class TransporteWhatsAppWeb:
         return Resultado("enviado")
 
     # -- auxiliares -------------------------------------------------------- #
+
+    def _clicar_campo(self, campo) -> None:
+        """Clica na caixa de digitar. Se um popup do WhatsApp (novidade,
+        atualização etc.) estiver por cima interceptando o clique, fecha o
+        popup e tenta de novo antes de desistir."""
+        from selenium.common.exceptions import ElementClickInterceptedException
+
+        try:
+            campo.click()
+        except ElementClickInterceptedException:
+            self._fechar_dialogo_generico()
+            campo.click()
+
+    def _fechar_dialogo_generico(self) -> None:
+        """Fecha modais que a Meta mostra de vez em quando (novidades,
+        pedido de atualização etc.) e que cobrem a caixa de digitar."""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.common.keys import Keys
+
+        try:
+            dialogos = self.driver.find_elements(
+                By.XPATH, '//div[@role="dialog" and @aria-modal="true"]'
+            )
+        except Exception:
+            return
+        for dlg in dialogos:
+            if not dlg.is_displayed():
+                continue
+            fechado = False
+            for seletor in (
+                './/button[@aria-label="Fechar" or @aria-label="Close"]',
+                './/div[@role="button"][@aria-label="Fechar" or @aria-label="Close"]',
+                ".//button",
+            ):
+                try:
+                    for btn in dlg.find_elements(By.XPATH, seletor):
+                        if btn.is_displayed():
+                            self.driver.execute_script("arguments[0].click();", btn)
+                            time.sleep(0.3)
+                            fechado = True
+                            break
+                except Exception:
+                    continue
+                if fechado:
+                    break
+            if not fechado:
+                try:
+                    self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+                    time.sleep(0.3)
+                except Exception:
+                    pass
 
     def _digitar(self, campo, texto: str, deve_parar=None) -> None:
         """Digita em blocos curtos. Shift+Enter para quebra de linha."""

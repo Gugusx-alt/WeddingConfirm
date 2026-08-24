@@ -275,54 +275,78 @@ class TransporteWhatsAppWeb:
 
     def _clicar_campo(self, campo) -> None:
         """Clica na caixa de digitar. Se um popup do WhatsApp (novidade,
-        atualização etc.) estiver por cima interceptando o clique, fecha o
-        popup e tenta de novo antes de desistir."""
+        atualização etc.) estiver por cima interceptando o clique, fecha o(s)
+        popup(s) e tenta de novo — algumas vezes, porque o mesmo aviso pode
+        reaparecer a cada conversa aberta e uma única tentativa não é
+        suficiente. Se depois disso o clique nativo continuar bloqueado,
+        clica via JavaScript direto no elemento: isso dispara o clique no
+        campo em si, sem depender de qual elemento está "por cima" na tela,
+        então overlays que o fechamento não conseguiu identificar deixam de
+        travar o envio."""
         from selenium.common.exceptions import ElementClickInterceptedException
 
-        try:
-            campo.click()
-        except ElementClickInterceptedException:
-            self._fechar_dialogo_generico()
-            campo.click()
+        for _tentativa in range(4):
+            try:
+                campo.click()
+                return
+            except ElementClickInterceptedException:
+                self._fechar_dialogo_generico()
+                time.sleep(0.4)
+
+        # Ainda bloqueado depois de tentar fechar diálogos: força via JS.
+        self.driver.execute_script("arguments[0].focus(); arguments[0].click();", campo)
 
     def _fechar_dialogo_generico(self) -> None:
         """Fecha modais que a Meta mostra de vez em quando (novidades,
-        pedido de atualização etc.) e que cobrem a caixa de digitar."""
+        pedido de atualização etc.) e que cobrem a caixa de digitar. Repete a
+        busca depois de cada fechamento, porque pode haver mais de um diálogo
+        empilhado ou um novo aparecer assim que o anterior fecha."""
         from selenium.webdriver.common.by import By
         from selenium.webdriver.common.keys import Keys
 
-        try:
-            dialogos = self.driver.find_elements(
-                By.XPATH, '//div[@role="dialog" and @aria-modal="true"]'
-            )
-        except Exception:
-            return
-        for dlg in dialogos:
-            if not dlg.is_displayed():
-                continue
-            fechado = False
-            for seletor in (
-                './/button[@aria-label="Fechar" or @aria-label="Close"]',
-                './/div[@role="button"][@aria-label="Fechar" or @aria-label="Close"]',
-                ".//button",
-            ):
-                try:
-                    for btn in dlg.find_elements(By.XPATH, seletor):
-                        if btn.is_displayed():
-                            self.driver.execute_script("arguments[0].click();", btn)
-                            time.sleep(0.3)
-                            fechado = True
-                            break
-                except Exception:
-                    continue
-                if fechado:
-                    break
-            if not fechado:
-                try:
-                    self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
-                    time.sleep(0.3)
-                except Exception:
-                    pass
+        for _rodada in range(3):
+            try:
+                dialogos = [
+                    dlg for dlg in self.driver.find_elements(
+                        By.XPATH, '//div[@role="dialog" and @aria-modal="true"]'
+                    )
+                    if dlg.is_displayed()
+                ]
+            except Exception:
+                return
+            if not dialogos:
+                return
+
+            fechou_algum = False
+            for dlg in dialogos:
+                fechado = False
+                for seletor in (
+                    './/button[@aria-label="Fechar" or @aria-label="Close"]',
+                    './/div[@role="button"][@aria-label="Fechar" or @aria-label="Close"]',
+                    './/*[@data-icon="x" or @data-icon="close"]',
+                    ".//button",
+                    './/div[@role="button"]',
+                ):
+                    try:
+                        for btn in dlg.find_elements(By.XPATH, seletor):
+                            if btn.is_displayed():
+                                self.driver.execute_script("arguments[0].click();", btn)
+                                time.sleep(0.3)
+                                fechado = True
+                                break
+                    except Exception:
+                        continue
+                    if fechado:
+                        break
+                if not fechado:
+                    try:
+                        self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+                        time.sleep(0.3)
+                    except Exception:
+                        pass
+                fechou_algum = fechou_algum or fechado
+            if not fechou_algum:
+                return
 
     def _digitar(self, campo, texto: str, deve_parar=None) -> None:
         """Digita em blocos curtos. Shift+Enter para quebra de linha."""

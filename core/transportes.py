@@ -211,7 +211,7 @@ class TransporteWhatsAppWeb:
             ) from e
 
     def _enviar_interno(self, telefone: str, texto: str, deve_parar=None) -> Resultado:
-        from selenium.common.exceptions import TimeoutException
+        from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions as EC
         from selenium.webdriver.support.ui import WebDriverWait
@@ -244,15 +244,28 @@ class TransporteWhatsAppWeb:
         if self._numero_invalido():
             return Resultado("invalido", "número não está no WhatsApp")
 
-        try:
-            self._clicar_campo(campo)
-            self._digitar(campo, texto, deve_parar)
-        except EnvioCancelado:
-            raise
-        except Exception as e:
-            if self._sessao_perdida():
-                raise SessaoPerdida("Sessão do WhatsApp Web caiu durante a digitação.")
-            return Resultado("falhou", f"erro ao digitar: {e}")
+        # O WhatsApp redesenha o rodapé logo depois de abrir a conversa (e ao
+        # fechar popups), o que invalida a referência ao campo. Quando isso
+        # acontece, localiza o campo de novo, limpa o que já foi digitado e
+        # recomeça — assim não sai mensagem pela metade.
+        for tentativa in range(3):
+            try:
+                if tentativa:
+                    campo = self._localizar_campo()
+                    self._limpar_campo(campo)
+                self._clicar_campo(campo)
+                self._digitar(campo, texto, deve_parar)
+                break
+            except EnvioCancelado:
+                raise
+            except StaleElementReferenceException as e:
+                if tentativa == 2:
+                    return Resultado("falhou", f"erro ao digitar: campo sumiu da tela ({e.msg})")
+                time.sleep(0.8)
+            except Exception as e:
+                if self._sessao_perdida():
+                    raise SessaoPerdida("Sessão do WhatsApp Web caiu durante a digitação.")
+                return Resultado("falhou", f"erro ao digitar: {e}")
 
         if not self._clicar_enviar(campo):
             return Resultado("falhou", "não achei o botão de enviar")
@@ -272,6 +285,23 @@ class TransporteWhatsAppWeb:
         return Resultado("enviado")
 
     # -- auxiliares -------------------------------------------------------- #
+
+    def _localizar_campo(self):
+        """Busca a caixa de digitar de novo (a referência antiga ficou inválida)."""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support import expected_conditions as EC
+        from selenium.webdriver.support.ui import WebDriverWait
+
+        return WebDriverWait(self.driver, 10, poll_frequency=0.3).until(
+            EC.presence_of_element_located((By.XPATH, '//footer//div[@contenteditable="true"]'))
+        )
+
+    def _limpar_campo(self, campo) -> None:
+        """Apaga qualquer texto parcial deixado por uma tentativa anterior."""
+        from selenium.webdriver.common.keys import Keys
+
+        campo.send_keys(Keys.CONTROL, "a")
+        campo.send_keys(Keys.BACKSPACE)
 
     def _clicar_campo(self, campo) -> None:
         """Clica na caixa de digitar. Se um popup do WhatsApp (novidade,
@@ -389,12 +419,17 @@ class TransporteWhatsAppWeb:
                         return True
             except Exception:
                 continue
-        try:
-            campo.send_keys(Keys.ENTER)
-            time.sleep(1.0)
-            return True
-        except Exception:
-            return False
+        for _tentativa in range(2):
+            try:
+                campo.send_keys(Keys.ENTER)
+                time.sleep(1.0)
+                return True
+            except Exception:
+                try:
+                    campo = self._localizar_campo()
+                except Exception:
+                    return False
+        return False
 
     def _texto_da_pagina(self) -> str:
         from selenium.webdriver.common.by import By
